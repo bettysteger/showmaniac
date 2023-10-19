@@ -1,5 +1,6 @@
 <script setup>
 import { RouterView } from 'vue-router'
+import Search from './components/Search.vue';
 </script>
 
 <template>
@@ -15,12 +16,26 @@ import { RouterView } from 'vue-router'
         </button>
         <a class="navbar-brand" href="/"><img src="/images/logo.png" alt="showmaniac"></a>
       </div>
-    </div>
+
+      <div class="collapse navbar-collapse" id="navbar-collapse">
+        <!-- <p ng-if="_.authData" class="navbar-text navbar-right" ng-cloak>
+          {{ _.authData.providerData[0].displayName || _.authData.email.replace('@temp.com', '') }} &nbsp;
+          <a ng-if="_.authData.email.indexOf('@temp.com') > 0" ng-click="_.showEmailForm=!_.showEmailForm" class="navbar-link">
+            Set email
+          </a>
+          <a ng-click="_.logout()" class="navbar-link">logout</a>
+        </p>
+        <ul class="nav navbar-nav navbar-right">
+          <li ng-if="!_.authData"><a ng-click="_.loginForm=!_.loginForm">login / signup</a></li>
+          <li ng-if="!_.authData"><a ng-click="_.oauth('facebook')">login with facebook</a></li>
+          <li ng-if="_.authData"><a href=""></a></li>
+        </ul> -->
+        <form class="navbar-form navbar-right">
+          <Search />
+        </form>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container -->
   </nav>
 
   <RouterView />
 </template>
-
-<style scoped>
-
-</style>
