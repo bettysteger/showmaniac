@@ -1,0 +1,10 @@
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+  <ShortName>showmaniac</ShortName>
+  <Description>
+    Search your favourite TV show and track it to always be up to date.
+  </Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="16" height="16" type="image/x-icon">/favicon.ico</Image>
+  <Url type="text/html" method="get" template="https://www.showmaniac.org/search?q={searchTerms}" />
+  <Query role="example" searchTerms="Sherlock" />
+</OpenSearchDescription>

@@ -1,35 +1,489 @@
 @import './base.css';
+@import './loading';
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-
-  font-weight: normal;
+.browsehappy {
+  margin: 0.2em 0;
+  background: #ccc;
+  color: #000;
+  padding: 0.2em 0;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
+p,
+li {
+  font-weight: 300;
+  font-size: 14px;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+p {
+  .fa {
+    font-size: 18px;
+  }
+
+  .fa-play-circle-o {
+    margin-left: 5px;
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
+[ng-click] {
+  cursor: pointer;
+}
+
+a {
+  color: var(--green);
+}
+
+a:hover,
+a:focus {
+  color: var(--green);
+}
+
+b,
+strong {
+  font-weight: 400;
+}
+
+ul,
+ol {
+  padding-left: 15px;
+}
+
+ol li {
+  padding-bottom: 23px;
+}
+
+hr.gap {
+  border-width: 0;
+  height: 100px;
+}
+
+h2+h4 {
+  line-height: 1.7;
+}
+
+.navbar {
+  border-radius: 0;
+}
+
+.navbar-brand {
+  padding: 3.5px 15px;
+}
+
+.navbar-collapse.in {
+  overflow: visible;
+}
+
+.help-block,
+.text-muted {
+  color: var(--lightGray);
+}
+
+.has-error .help-block,
+.has-error .control-label,
+.has-error .radio,
+.has-error .checkbox,
+.has-error .radio-inline,
+.has-error .checkbox-inline,
+.has-error.radio label,
+.has-error.checkbox label,
+.has-error.radio-inline label,
+.has-error.checkbox-inline label {
+  color: var(--red);
+}
+
+.has-error .form-control {
+  border-color: var(--red);
+}
+
+.fa {
+  color: var(--lightGray);
+
+  &:hover {
+    color: var(--gray);
+  }
+}
+
+a:hover .fa {
+  color: var(--gray);
+}
+
+.fa.green {
+  color: var(--green);
+}
+
+.fa-trophy {
+  color: #fff;
+}
+
+.fa-chevron-up,
+.fa-chevron-down {
+  color: #fff;
+  opacity: .7;
+}
+
+.text-right .form-inline {
+
+  /* filter shows */
+  .form-control {
+    background: var(--darkGray);
+    border-color: var(--bodyBg);
+    color: var(--white);
+
+    /* @include input-placeholder {
+      color: var(--bodyBg);
+    } */
+
+    &:hover,
+    &:focus {
+      +.fa-search {
+        color: var(--lightGray);
+      }
+    }
   }
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+  .fa-search {
+    color: var(--bodyBg);
   }
+
+  /* .form-control:hover {
+    &:not(:focus) {
+      @include input-placeholder {
+        color: var(--lightGray);
+      }
+    }
+  } */
+}
+
+.search {
+  .fa-search {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    color: var(--lightGray);
+  }
+
+  &:hover .fa-search {
+    color: var(--darkGray);
+  }
+
+  input[type=search] {
+    border-radius: 30px;
+    padding-left: 40px;
+
+    &.input-lg {
+      padding-left: 54px;
+    }
+  }
+}
+
+.greenbg {
+  background: var(--green);
+  color: #fff;
+  padding: 10px 25px;
+  position: relative;
+  z-index: 1;
+
+  h2, h3 {
+    margin: 0;
+  }
+
+  h3 {
+    opacity: .9;
+  }
+
+  select {
+    color: #000;
+  }
+}
+
+.border-right {
+  border-right: 1px dotted rgba(var(--bodyBg), .1);
+}
+
+.tvshow {
+  background: #fff;
+  color: #333;
+  padding: 10px;
+
+  &.seen {
+    background: var(--bg);
+    border-left: 3px solid var(--green);
+    margin-left: -18px;
+
+    border-right-color: var(--bg);
+  }
+
+  p {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .fa-spin {
+    font-size: 19px;
+  }
+
+  .fa-check-circle,
+  .fa-times-circle,
+  .fa-plus-circle {
+    font-size: 20px;
+  }
+
+  .fa-arrow-circle-up {
+    width: 21px;
+    text-align: center;
+  }
+}
+
+.banner {
+  background: none;
+  color: var(--white);
+  padding-bottom: 0;
+  padding-top: 9px;
+
+  h4 {
+    margin-bottom: 4px;
+  }
+}
+
+.footer {
+  padding: 30px 0;
+  margin-top: 70px;
+  border-top: 1px solid var(--darkGray);
+
+  .fa {
+    line-height: normal;
+  }
+}
+
+.form-control:focus {
+  border-color: var(--white);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(59, 208, 140, 0.6);
+}
+
+/**
+ * Typeahead
+ */
+[uib-typeahead-popup].dropdown-menu {
+  border-radius: 2px;
+  box-shadow: none;
+  padding: 0;
+  margin-top: 0px;
+  margin-left: 12px;
+  border-top: none;
+
+  >li>a {
+    padding: 4px 12px;
+    font-size: 16px;
+    height: 68px;
+    overflow: hidden;
+
+    strong {
+      border-bottom: 1px solid var(--green);
+    }
+
+    img {
+      height: 60px;
+      margin-right: 10px;
+      float: left;
+    }
+  }
+
+  >.active>a {
+
+    &,
+    &:hover,
+    &:focus {
+      background-color: var(--green);
+    }
+
+    strong {
+      border-color: #fff;
+    }
+  }
+
+  a.popular {
+    background-color: #fff !important;
+    color: var(--green);
+    height: auto !important;
+    text-align: center;
+    padding: 12px;
+
+    img,
+    small {
+      display: none;
+    }
+
+    span {
+      margin-top: 0 !important;
+    }
+
+    &:hover span,
+    &:focus span {
+      text-decoration: underline;
+    }
+  }
+}
+
+.input-lg+[uib-typeahead-popup].dropdown-menu {
+  margin-left: 45px;
+
+  >li>a {
+    font-size: 18px;
+    height: 88px;
+
+    img {
+      height: 80px;
+    }
+
+    span {
+      margin-top: 8px;
+      display: inline-block;
+    }
+  }
+}
+
+.modal-content {
+  background: var(--bodyBg);
+
+  img.pull-right {
+    margin-left: 10px;
+    margin-bottom: 6px;
+  }
+}
+
+.modal-footer {
+  text-align: center;
+}
+
+.modal-header,
+.modal-footer {
+  border-color: transparent;
+}
+
+.close {
+  color: var(--white);
+  opacity: .8;
+  text-shadow: none;
+}
+
+.btn-success {
+  background-color: var(--green);
+  border-color: var(--green);
+
+  &:hover {
+    background-color: darken(var(--green), 5%);
+    border-color: var(--green);
+  }
+}
+
+.tooltip {
+  text-shadow: none;
+  white-space: nowrap;
+  text-transform: none;
+  font-weight: 300;
+}
+
+
+.fa-clock-o:hover {
+  color: inherit;
+}
+
+.half-clock,
+.three-quarter-clock {
+  position: relative;
+
+  &:after {
+    position: absolute;
+    content: '';
+    left: 0.5em;
+    width: 0.5em;
+    height: 1em;
+    background-color: var(--bodyBg);
+  }
+}
+
+.three-quarter-clock:after {
+  top: 0.5em;
+}
+
+.tvshow .half-clock,
+.tvshow .three-quarter-clock {
+  &:after {
+    background-color: #fff;
+  }
+}
+
+
+.poster {
+  display: inline-block;
+  position: relative;
+
+  .info {
+    display: none;
+    position: absolute;
+    top: 20px;
+    text-align: center;
+    width: 100%;
+  }
+
+  &:hover,
+  &:focus {
+    .info {
+      display: block;
+    }
+
+    img {
+      opacity: .3;
+    }
+  }
+}
+
+.fa-amazon {
+  position: relative;
+  bottom: -1.5px;
+}
+
+.freeForPrime {
+  position: relative;
+
+  &:after {
+    position: absolute;
+    right: 0px;
+    bottom: -6px;
+    content: '✔';
+    color: #fc9a18;
+  }
+
+  &:hover:before {
+    position: absolute;
+    left: 18px;
+    bottom: -6px;
+    content: 'Free with Prime';
+    color: #51a7c8;
+    font-weight: 400;
+    font-style: italic;
+    background: #fff;
+  }
+}
+
+.modal-content .freeForPrime:hover:before {
+  display: none;
+}
+
+
+.fb-page {
+  margin-top: -31px;
+  width: 100% !important;
+}
+
+/* http://stackoverflow.com/questions/29429296/responsive-width-facebook-page-plugin */
+.fb-page span,
+.fb-page span iframe[style] {
+  width: 100% !important;
+}
+
+/* remove netlify badge */
+noscript+a,
+noscript+a+div,
+noscript+a+div+div {
+  display: none !important;
 }

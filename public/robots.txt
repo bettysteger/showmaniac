@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /disclaimer
+Disallow: /privacy-policy
+Allow: /

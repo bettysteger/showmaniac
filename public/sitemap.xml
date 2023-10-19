@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+   <url>
+    <loc>https://www.showmaniac.org/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+   </url>
+
+   <url>
+    <loc>https://www.showmaniac.org/popular</loc>
+    <changefreq>monthly</changefreq>
+   </url>
+
+   <url>
+    <loc>https://www.showmaniac.org/tv/13/the-flash</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/82/game-of-thrones</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/1859/lucifer</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/4/arrow</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/73/the-walking-dead</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/66/the-big-bang-theory</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/1850/supergirl</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/19/supernatural</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/335/sherlock</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+   <url>
+    <loc>https://www.showmaniac.org/tv/1369/marvels-daredevil</loc>
+    <changefreq>weekly</changefreq>
+   </url>
+
+</urlset>
