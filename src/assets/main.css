@@ -14,14 +14,12 @@ li {
   font-size: 14px;
 }
 
-p {
-  .fa {
-    font-size: 18px;
-  }
+p .fa {
+  font-size: 18px;
+}
 
-  .fa-play-circle-o {
-    margin-left: 5px;
-  }
+p .fa-play-circle-o {
+  margin-left: 5px;
 }
 
 [ng-click] {
@@ -96,10 +94,10 @@ h2+h4 {
 
 .fa {
   color: var(--lightGray);
+}
 
-  &:hover {
-    color: var(--gray);
-  }
+.fa:hover {
+  color: var(--gray);
 }
 
 a:hover .fa {
@@ -117,33 +115,11 @@ a:hover .fa {
 .fa-chevron-up,
 .fa-chevron-down {
   color: #fff;
-  opacity: .7;
+  opacity: 0.7;
 }
 
 .text-right .form-inline {
-
   /* filter shows */
-  .form-control {
-    background: var(--darkGray);
-    border-color: var(--bodyBg);
-    color: var(--white);
-
-    /* @include input-placeholder {
-      color: var(--bodyBg);
-    } */
-
-    &:hover,
-    &:focus {
-      +.fa-search {
-        color: var(--lightGray);
-      }
-    }
-  }
-
-  .fa-search {
-    color: var(--bodyBg);
-  }
-
   /* .form-control:hover {
     &:not(:focus) {
       @include input-placeholder {
@@ -153,26 +129,42 @@ a:hover .fa {
   } */
 }
 
-.search {
-  .fa-search {
-    position: absolute;
-    top: 10px;
-    left: 15px;
-    color: var(--lightGray);
-  }
+.text-right .form-inline .form-control {
+  background: var(--darkGray);
+  border-color: var(--bodyBg);
+  color: var(--white);
+  /* @include input-placeholder {
+    color: var(--bodyBg);
+  } */
+}
 
-  &:hover .fa-search {
-    color: var(--darkGray);
-  }
+.text-right .form-inline .form-control:hover+.fa-search,
+.text-right .form-inline .form-control:focus+.fa-search {
+  color: var(--lightGray);
+}
 
-  input[type=search] {
-    border-radius: 30px;
-    padding-left: 40px;
+.text-right .form-inline .fa-search {
+  color: var(--bodyBg);
+}
 
-    &.input-lg {
-      padding-left: 54px;
-    }
-  }
+.search .fa-search {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  color: var(--lightGray);
+}
+
+.search:hover .fa-search {
+  color: var(--darkGray);
+}
+
+.search input[type=search] {
+  border-radius: 30px;
+  padding-left: 40px;
+}
+
+.search input[type=search].input-lg {
+  padding-left: 54px;
 }
 
 .greenbg {
@@ -181,56 +173,56 @@ a:hover .fa {
   padding: 10px 25px;
   position: relative;
   z-index: 1;
+}
 
-  h2, h3 {
-    margin: 0;
-  }
+.greenbg h2,
+.greenbg h3 {
+  margin: 0;
+}
 
-  h3 {
-    opacity: .9;
-  }
+.greenbg h3 {
+  opacity: 0.9;
+}
 
-  select {
-    color: #000;
-  }
+.greenbg select {
+  color: #000;
 }
 
 .border-right {
-  border-right: 1px dotted rgba(var(--bodyBg), .1);
+  border-right: 1px dotted rgba(var(--bodyBg), 0.1);
 }
 
 .tvshow {
   background: #fff;
   color: #333;
   padding: 10px;
+}
 
-  &.seen {
-    background: var(--bg);
-    border-left: 3px solid var(--green);
-    margin-left: -18px;
+.tvshow.seen {
+  background: var(--bg);
+  border-left: 3px solid var(--green);
+  margin-left: -18px;
+  border-right-color: var(--bg);
+}
 
-    border-right-color: var(--bg);
-  }
+.tvshow p {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 
-  p {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
+.tvshow .fa-spin {
+  font-size: 19px;
+}
 
-  .fa-spin {
-    font-size: 19px;
-  }
+.tvshow .fa-check-circle,
+.tvshow .fa-times-circle,
+.tvshow .fa-plus-circle {
+  font-size: 20px;
+}
 
-  .fa-check-circle,
-  .fa-times-circle,
-  .fa-plus-circle {
-    font-size: 20px;
-  }
-
-  .fa-arrow-circle-up {
-    width: 21px;
-    text-align: center;
-  }
+.tvshow .fa-arrow-circle-up {
+  width: 21px;
+  text-align: center;
 }
 
 .banner {
@@ -238,20 +230,20 @@ a:hover .fa {
   color: var(--white);
   padding-bottom: 0;
   padding-top: 9px;
+}
 
-  h4 {
-    margin-bottom: 4px;
-  }
+.banner h4 {
+  margin-bottom: 4px;
 }
 
 .footer {
   padding: 30px 0;
   margin-top: 70px;
   border-top: 1px solid var(--darkGray);
+}
 
-  .fa {
-    line-height: normal;
-  }
+.footer .fa {
+  line-height: normal;
 }
 
 .form-control:focus {
@@ -261,11 +253,11 @@ a:hover .fa {
 
 .modal-content {
   background: var(--bodyBg);
+}
 
-  img.pull-right {
-    margin-left: 10px;
-    margin-bottom: 6px;
-  }
+.modal-content img.pull-right {
+  margin-left: 10px;
+  margin-bottom: 6px;
 }
 
 .modal-footer {
@@ -279,18 +271,18 @@ a:hover .fa {
 
 .close {
   color: var(--white);
-  opacity: .8;
+  opacity: 0.8;
   text-shadow: none;
 }
 
 .btn-success {
   background-color: var(--green);
   border-color: var(--green);
+}
 
-  &:hover {
-    background-color: darken(var(--green), 5%);
-    border-color: var(--green);
-  }
+.btn-success:hover {
+  /* background-color: darken(var(--green), 5%); */
+  border-color: var(--green);
 }
 
 .tooltip {
@@ -300,7 +292,6 @@ a:hover .fa {
   font-weight: 300;
 }
 
-
 .fa-clock-o:hover {
   color: inherit;
 }
@@ -308,51 +299,48 @@ a:hover .fa {
 .half-clock,
 .three-quarter-clock {
   position: relative;
+}
 
-  &:after {
-    position: absolute;
-    content: '';
-    left: 0.5em;
-    width: 0.5em;
-    height: 1em;
-    background-color: var(--bodyBg);
-  }
+.half-clock:after,
+.three-quarter-clock:after {
+  position: absolute;
+  content: "";
+  left: 0.5em;
+  width: 0.5em;
+  height: 1em;
+  background-color: var(--bodyBg);
 }
 
 .three-quarter-clock:after {
   top: 0.5em;
 }
 
-.tvshow .half-clock,
-.tvshow .three-quarter-clock {
-  &:after {
-    background-color: #fff;
-  }
+.tvshow .half-clock:after,
+.tvshow .three-quarter-clock:after {
+  background-color: #fff;
 }
-
 
 .poster {
   display: inline-block;
   position: relative;
+}
 
-  .info {
-    display: none;
-    position: absolute;
-    top: 20px;
-    text-align: center;
-    width: 100%;
-  }
+.poster .info {
+  display: none;
+  position: absolute;
+  top: 20px;
+  text-align: center;
+  width: 100%;
+}
 
-  &:hover,
-  &:focus {
-    .info {
-      display: block;
-    }
+.poster:hover .info,
+.poster:focus .info {
+  display: block;
+}
 
-    img {
-      opacity: .3;
-    }
-  }
+.poster:hover img,
+.poster:focus img {
+  opacity: 0.3;
 }
 
 .fa-amazon {
@@ -362,31 +350,30 @@ a:hover .fa {
 
 .freeForPrime {
   position: relative;
+}
 
-  &:after {
-    position: absolute;
-    right: 0px;
-    bottom: -6px;
-    content: '✔';
-    color: #fc9a18;
-  }
+.freeForPrime:after {
+  position: absolute;
+  right: 0px;
+  bottom: -6px;
+  content: "✔";
+  color: #fc9a18;
+}
 
-  &:hover:before {
-    position: absolute;
-    left: 18px;
-    bottom: -6px;
-    content: 'Free with Prime';
-    color: #51a7c8;
-    font-weight: 400;
-    font-style: italic;
-    background: #fff;
-  }
+.freeForPrime:hover:before {
+  position: absolute;
+  left: 18px;
+  bottom: -6px;
+  content: "Free with Prime";
+  color: #51a7c8;
+  font-weight: 400;
+  font-style: italic;
+  background: #fff;
 }
 
 .modal-content .freeForPrime:hover:before {
   display: none;
 }
-
 
 .fb-page {
   margin-top: -31px;
