@@ -30,7 +30,7 @@ export const useShowsStore = defineStore('shows', () => {
     if (shows.value.find((s) => s.id === show.id)) return
 
     shows.value.push(show);
-    updateStorage();
+    update(show).then(updateStorage)
   }
 
   function remove(show) {
@@ -87,7 +87,11 @@ export const useShowsStore = defineStore('shows', () => {
     return getInfo(show);
   }
 
-  return { shows, add, remove, toggleSeen, update, unseen }
+  function modalLink(show) {
+    if(!show.url) { return; }
+    return '/tv'+show.url.replace(/https?:\/\/www\.tvmaze\.com\/shows/, '');
+  }
+  return { shows, add, remove, toggleSeen, update, modalLink, unseen }
 })
 
 

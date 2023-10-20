@@ -1,6 +1,7 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import Search from './components/Search.vue';
+import ShowModal from './views/ShowModal.vue';
 </script>
 
 <template>
@@ -38,4 +39,5 @@ import Search from './components/Search.vue';
   </nav>
 
   <RouterView />
+  <ShowModal />
 </template>
