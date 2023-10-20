@@ -1,11 +1,13 @@
 <script setup>
 import { ref } from 'vue'
+import { useShowsStore } from '@/stores/shows';
 import { usePopularStore } from '@/stores/popular'
 import { storeToRefs } from 'pinia';
 
 const newShow = ref('')
 const focused = ref(false)
 const loading = ref(false)
+const showsStore = useShowsStore()
 const popularStore = usePopularStore()
 const { popularShows } = storeToRefs(popularStore)
 
@@ -45,10 +47,10 @@ function loadPopular() {
   <div class="dropdown">
     <ul class="dropdown-menu" :class="{show: results.length || (focused && popularShows.length)}">
       <li v-for="result in results" :key="result.id">
-        <a class="dropdown-item">{{ result.name }}</a>
+        <a class="dropdown-item" @click.prevent="showsStore.add(result)" href>{{ result.name }}</a>
       </li>
       <li v-for="show in popularShows" :key="show.ids.trakt">
-        <a class="dropdown-item">{{ show.title }}</a>
+        <a class="dropdown-item" @click.prevent="showsStore.add(result)" href>{{ show.title }}</a>
       </li>
     </ul>
   </div>
