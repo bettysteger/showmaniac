@@ -51,7 +51,7 @@ function parseName(show) {
 /**
  * Generates watchseries Link
  * @example
- *   https://www1.watchseries.fm/series/big-little-lies-season-2-episode-1
+ *   https://www.watchseries1.video/tv-series/big-little-lies-season-2-episode-1
  * @return {String}      link to watchseries-online
  */
 function watchseries(show) {
@@ -60,7 +60,7 @@ function watchseries(show) {
   var season = parseInt(episodeNo.split('x')[0]);
   var episode = parseInt(episodeNo.split('x')[1]);
 
-  return 'https://www1.watchseries.fm/series/' + series + '-season-' + season + '-episode-' + episode;
+  return 'https://www.watchseries1.video/tv-series/' + series + '-season-' + season + '-episode-' + episode;
 }
 
 function nextEpisodeNo(show) {

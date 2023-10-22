@@ -22,10 +22,6 @@ p .fa-play-circle-o {
   margin-left: 5px;
 }
 
-[ng-click] {
-  cursor: pointer;
-}
-
 a {
   color: var(--green);
 }
