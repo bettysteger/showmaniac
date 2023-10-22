@@ -4,6 +4,8 @@ import { useShowsStore } from '@/stores/shows';
 import { usePopularStore } from '@/stores/popular'
 import { storeToRefs } from 'pinia';
 
+defineProps(['size'])
+
 const newShow = ref('')
 const focused = ref(false)
 const loading = ref(false)
@@ -42,8 +44,9 @@ function onBlur() {
 </script>
 <template>
   <div class="form-group has-feedback search">
-    <i class="fa fa-search"></i>
+    <i class="fa fa-search" :class="{'fa-2x': size === 'lg'}"></i>
     <input type="search" v-model="newShow" placeholder="add TV show" class="form-control"
+            :class="{'input-lg': size === 'lg'}"
             @input="search" @focus="loadPopular" @blur="onBlur" />
     <span v-if="loading" class="form-control-feedback">
       <i class="fa fa-circle-o-notch fa-spin"></i>

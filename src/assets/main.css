@@ -22,6 +22,10 @@ p .fa-play-circle-o {
   margin-left: 5px;
 }
 
+.fa-check-circle, .fa-times-circle {
+  cursor: pointer;
+}
+
 a {
   color: var(--green);
 }

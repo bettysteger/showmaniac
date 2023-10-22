@@ -38,53 +38,6 @@
       <div id="app"></div>
       <script type="module" src="/src/main.js"></script>
 
-      <p>&nbsp;</p>
-
-      <div class="row">
-        <div class="col-md-7">
-
-          <hr class="gap hidden-xs">
-
-          <h1>Latest air dates only</h1>
-          <h3>Shows the previous and next air date of your added TV shows<br>in your local time</h3>
-<!--           <p>&nbsp;</p>
-          <h2>In your local time</h2>
-          <h4>TV shows are produced in US, UK, etc = different timezones!</h4> -->
-          <!-- <br>Always know when the latest episode aired -->
-
-          <p>&nbsp;</p>
-          <p>&nbsp;</p>
-
-          <div class="row">
-            <div class="col-sm-9">
-              <div class="form-group has-feedback search">
-                <i class="fa fa-2x fa-search"></i>
-                <input type="search" ng-model="newShow" placeholder="add TV show" class="form-control input-lg"
-                        uib-typeahead="searchedShow.name for searchedShow in _.search($viewValue)"
-                        typeahead-min-length="0" typeahead-wait-ms="400" typeahead-template-url="views/typeahead.html"
-                        typeahead-on-select="$item.id ? _.add($item) : _.openPopular(); newShow=''" typeahead-loading="newLoading"
-                        typeahead-focus-on-select="false" />
-                <span ng-if="newLoading" class="form-control-feedback">
-                  <i class="fa fa-circle-o-notch fa-spin"></i>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- or <a class="btn btn-success">Android</a> -->
-        </div>
-        <div class="col-md-4 col-md-offset-1">
-
-          <div class="text-center">
-            <img src="/images/icon.png" alt="Showmaniac Logo">
-          </div>
-          <p>&nbsp;</p>
-
-          <div class="greenbg row hidden-xs"></div>
-          <!-- ngRepeat: show in _.exampleShows --><div ng-repeat="show in _.exampleShows" class="tvshow row hidden-xs ng-scope" ng-class="{seen:show.seen}"> <div class="col-xs-10"> <h4 class="ng-binding">The Big Bang Theory</h4> <p class="ng-binding"> 26 Sep 2017 02:00 &nbsp; <b> <a ng-href="http://google.com/search?q=The Big Bang Theory 11x01" target="_blank" rel="noopener" class="ng-binding" href="http://google.com/search?q=The Big Bang Theory 11x01">11x01</a> </b> </p> </div> <div class="col-xs-2 text-right"> <i ng-click="show.seen=!show.seen" uib-tooltip="seen?" class="fa fa-check-circle" ng-class="{green:show.seen}"></i> </div> </div><!-- end ngRepeat: show in _.exampleShows --><div ng-repeat="show in _.exampleShows" class="tvshow row hidden-xs ng-scope seen" ng-class="{seen:show.seen}"> <div class="col-xs-10"> <h4 class="ng-binding">Game of Thrones</h4> <p class="ng-binding"> 28 Aug 2017 03:00 &nbsp; <b> <a ng-href="http://google.com/search?q=Game of Thrones 07x07" target="_blank" rel="noopener" class="ng-binding" href="http://google.com/search?q=Game of Thrones 07x07">07x07</a> </b> </p> </div> <div class="col-xs-2 text-right"> <i ng-click="show.seen=!show.seen" uib-tooltip="seen?" class="fa fa-check-circle green" ng-class="{green:show.seen}"></i> </div> </div><!-- end ngRepeat: show in _.exampleShows --><div ng-repeat="show in _.exampleShows" class="tvshow row hidden-xs ng-scope" ng-class="{seen:show.seen}"> <div class="col-xs-10"> <h4 class="ng-binding">Sherlock</h4> <p class="ng-binding"> 15 Jan 2017 22:00 &nbsp; <b> <a ng-href="http://google.com/search?q=Sherlock 04x03" target="_blank" rel="noopener" class="ng-binding" href="http://google.com/search?q=Sherlock 04x03">04x03</a> </b> </p> </div> <div class="col-xs-2 text-right"> <i ng-click="show.seen=!show.seen" uib-tooltip="seen?" class="fa fa-check-circle" ng-class="{green:show.seen}"></i> </div> </div><!-- end ngRepeat: show in _.exampleShows -->
-        </div>
-      </div>
-
       <hr class="gap">
 
       <div class="row text-center">
