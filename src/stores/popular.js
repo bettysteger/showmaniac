@@ -14,8 +14,10 @@ export const usePopularStore = defineStore('popular', () => {
     return fetch(`https://api.trakt.tv/shows/trending?limit=12&page=${currentPage.value}`, { headers })
       .then(response => response.json())
       .then(data => {
-        console.log(data);
-        popularShows.value = data.map((r) => r.show)
+        data.forEach(async result => {
+          let show = await fetch(`https://api.tvmaze.com/singlesearch/shows?q=${result.show.title}`)
+          popularShows.value.push(await show.json())
+        });
         return popularShows.value
       })
   }
