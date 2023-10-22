@@ -8,15 +8,20 @@ import ShowFuture from '../components/ShowFuture.vue';
 const { shows, unseen } = storeToRefs(useShowsStore())
 const filterOutSeen = ref(localStorage.getItem('filterOutSeen') || false)
 const showFutureCol = ref(true)
+const query = ref('')
+
+function filterQuery(show) {
+  return query.value.length ? show.name.toLowerCase().includes(query.value.toLowerCase()) : true
+}
 
 // sort past shows by latestepisode.date
-const pastShows = computed(() => [...shows.value].filter(show => {
+const pastShows = computed(() => [...shows.value].filter(filterQuery).filter(show => {
   return unseen.value.length ? (!filterOutSeen.value || !show.seen) : true
 }).sort((a, b) => {
   return new Date(b.latestepisode?.date) - new Date(a.latestepisode?.date);
 }))
 // sort future shows by nextepisode.date (tba should be at end)
-const futureShows = computed(() => [...shows.value].sort((a, b) => {
+const futureShows = computed(() => [...shows.value].filter(filterQuery).sort((a, b) => {
   if (a.nextepisode?.date === 'tba' || a.nextepisode?.date == 'ENDED') return 1;
   if (b.nextepisode?.date === 'tba' || b.nextepisode?.date == 'ENDED') return -1;
   return new Date(a.nextepisode?.date) - new Date(b.nextepisode?.date);
@@ -48,10 +53,10 @@ function toggleFilterOutSeen() {
         </h3>
 
       </div>
-      <div ng-show="_.shows.length>1" class="col-sm-6 text-right hidden-xs">
+      <div v-if="shows.length > 1" class="col-sm-6 text-right hidden-xs">
         <div class="form-inline">
           <div class="form-group has-feedback search">
-            <input type="search" ng-model="query" placeholder="filter added shows" class="form-control" />
+            <input type="search" v-model="query" placeholder="filter added shows" class="form-control" />
             <i class="fa fa-search"></i>
           </div>
         </div>
