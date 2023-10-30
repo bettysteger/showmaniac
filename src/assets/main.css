@@ -22,7 +22,7 @@ p .fa-play-circle-o {
   margin-left: 5px;
 }
 
-.fa-check-circle, .fa-times-circle {
+.fa-check-circle, .fa-times-circle, .fa-toggle-on {
   cursor: pointer;
 }
 
