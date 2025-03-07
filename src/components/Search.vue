@@ -33,7 +33,9 @@ function search() {
 
 function loadPopular() {
   focused.value = true
-  popularStore.query()
+  if (popularShows.value.length === 0) {
+    popularStore.fetchPopularShows()
+  }
 }
 
 function onBlur() {
@@ -67,69 +69,74 @@ function onBlur() {
           </small>
         </a>
       </li>
+      <!-- <li>
+        <a class="dropdown-item popular" @click.prevent="popularStore.showPopular = true" href>Browse Popular</a>
+      </li> -->
     </ul>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .dropdown-menu {
   border-radius: 2px;
   box-shadow: none;
   padding: 0;
-  margin-top: 0px;
-  margin-left: 12px;
-  border-top: none;
-}
-.dropdown-menu > li > a {
-  padding: 4px 12px;
-  font-size: 16px;
-  height: 68px;
-  overflow: hidden;
-}
-.dropdown-menu > li > a strong {
-  border-bottom: 1px solid var(--green);
-}
-.dropdown-menu > li > a img {
-  height: 60px;
-  margin-right: 10px;
-  float: left;
-}
-.dropdown-menu > .active > a, .dropdown-menu > .active > a:hover, .dropdown-menu > .active > a:focus {
-  background-color: var(--green);
-}
-.dropdown-menu > .active > a strong {
-  border-color: #fff;
-}
-.dropdown-menu a.popular {
-  background-color: #fff !important;
-  color: var(--green);
-  height: auto !important;
-  text-align: center;
-  padding: 12px;
-}
-.dropdown-menu a.popular img,
-.dropdown-menu a.popular small {
-  display: none;
-}
-.dropdown-menu a.popular span {
-  margin-top: 0 !important;
-}
-.dropdown-menu a.popular:hover span, .dropdown-menu a.popular:focus span {
-  text-decoration: underline;
-}
-
-.dropdown-menu {
+  margin-top: 0;
   margin-left: 45px;
-}
-.dropdown-menu > li > a {
-  font-size: 18px;
-  height: 88px;
-}
-.dropdown-menu > li > a img {
-  height: 80px;
-}
-.dropdown-menu > li > a span {
-  margin-top: 8px;
-  display: inline-block;
+  border-top: none;
+  width: 100%;
+  max-width: calc(100vw - 60px);
+
+  > li > a {
+    padding: 4px 12px;
+    font-size: 16px;
+    height: 68px;
+    overflow: hidden;
+
+    strong {
+      border-bottom: 1px solid var(--green);
+    }
+
+    img {
+      height: 60px;
+      margin-right: 10px;
+      float: left;
+    }
+
+    span {
+      margin-top: 8px;
+      display: inline-block;
+    }
+  }
+
+  > .active > a {
+    &, &:hover, &:focus {
+      background-color: var(--green);
+    }
+
+    strong {
+      border-color: #fff;
+    }
+  }
+
+  a.popular {
+    background-color: #fff !important;
+    color: var(--green);
+    height: auto !important;
+    text-align: center;
+    padding: 12px;
+
+    img, small {
+      display: none;
+    }
+
+    span {
+      margin-top: 0 !important;
+    }
+
+    &:hover span, &:focus span {
+      text-decoration: underline;
+    }
+  }
 }
 </style>
