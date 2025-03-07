@@ -2,12 +2,14 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { auth, db } from '../firebase/config'
 import { ref as dbRef, set, onValue } from 'firebase/database'
+import { useLoading } from '../composables/useLoading'
 
 const apiUrl = 'https://api.tvmaze.com/shows/';
 
 export const useShowsStore = defineStore('shows', () => {
   const shows = ref(JSON.parse(localStorage.getItem('showmaniac')) || []);
   const loadedCount = ref(0);
+  const { startLoading, stopLoading } = useLoading();
   let dbUnsubscribe = null;
   let isInitialSync = true;
   let isSyncing = false;
@@ -19,7 +21,10 @@ export const useShowsStore = defineStore('shows', () => {
 
       // First time login - upload local shows
       if (isInitialSync && shows.value.length > 0) {
-        set(userShowsRef, shows.value);
+        startLoading();
+        set(userShowsRef, shows.value).finally(() => {
+          stopLoading();
+        });
       }
 
       // Subscribe to changes
@@ -27,9 +32,11 @@ export const useShowsStore = defineStore('shows', () => {
         const data = snapshot.val();
         if (data && !isSyncing) {
           isSyncing = true;
+          startLoading();
           shows.value = data;
           localStorage.setItem('showmaniac', JSON.stringify(shows.value));
           isSyncing = false;
+          stopLoading();
         }
         isInitialSync = false;
       });
@@ -48,11 +55,15 @@ export const useShowsStore = defineStore('shows', () => {
    */
   function updateShows() {
     loadedCount.value = 0;
+    if (shows.value.length > 0) {
+      startLoading();
+    }
     shows.value.forEach(async (show) => {
       await update(show)
       loadedCount.value++;
       if(loadedCount.value === shows.value.length) {
         updateStorage();
+        stopLoading();
       }
     });
   }
@@ -67,9 +78,11 @@ export const useShowsStore = defineStore('shows', () => {
     const user = auth.currentUser;
     if (user) {
       isSyncing = true;
+      startLoading();
       const userShowsRef = dbRef(db, `users/${user.uid}/shows`);
       set(userShowsRef, shows.value).finally(() => {
         isSyncing = false;
+        stopLoading();
       });
     }
   }

@@ -13,6 +13,7 @@ import {
 import Search from './components/Search.vue';
 import ShowModal from './views/ShowModal.vue';
 import LoginForm from './components/LoginForm.vue';
+import LoadingSpinner from './components/LoadingSpinner.vue'
 
 const seen1 = ref(false)
 const seen2 = ref(true)
@@ -63,6 +64,8 @@ onMounted(() => {
 </script>
 
 <template>
+  <LoadingSpinner />
+
   <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
       <!-- Brand and toggle get grouped for better mobile display -->
