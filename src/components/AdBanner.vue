@@ -1,26 +1,27 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+
+const adUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9582229220927084'
 const adBlocker = ref(false)
 
+function loadAd() {
+    (window.adsbygoogle = window.adsbygoogle || []).push({})
+    adBlocker.value = !document.querySelector('.adsbygoogle').children.length
+}
 onMounted(() => {
-  // Load AdSense script
+  // Load AdSense script, if not already loaded
+  if (document.head.querySelector(`script[src="${adUrl}"]`)) {
+    setTimeout(loadAd, 2000)
+    return
+  }
   const script = document.createElement('script')
-  script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9582229220927084'
+  script.src = adUrl
   script.async = true
   script.crossorigin = 'anonymous'
   document.head.appendChild(script)
 
   // Initialize ad
-  script.onload = () => {
-    setTimeout(() => {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({})
-      adBlocker.value = !document.querySelector('.adsbygoogle').children.length
-      } catch (e) {
-        console.error('AdSense error:', e)
-      }
-    })
-  }
+  script.onload = () => setTimeout(loadAd)
 })
 </script>
 
