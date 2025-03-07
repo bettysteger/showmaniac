@@ -8,6 +8,7 @@ const apiUrl = 'https://api.tvmaze.com/shows/';
 
 export const useShowsStore = defineStore('shows', () => {
   const shows = ref(JSON.parse(localStorage.getItem('showmaniac')) || []);
+  const originalTitle = document.title
   const loadedCount = ref(0);
   const { startLoading, stopLoading } = useLoading();
   let dbUnsubscribe = null;
@@ -69,10 +70,16 @@ export const useShowsStore = defineStore('shows', () => {
   }
   updateShows();
 
+  function updateSiteTitle() {
+    const unseenCount = unseen.value.length
+    document.title = unseenCount ? `(${unseenCount}) ${originalTitle}` : originalTitle
+  }
+
   function updateStorage() {
     if (isSyncing) return;
 
     localStorage.setItem('showmaniac', JSON.stringify(shows.value));
+    updateSiteTitle();
 
     // Sync to Firebase if user is logged in
     const user = auth.currentUser;
