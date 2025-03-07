@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia';
 import ShowPast from '../components/ShowPast.vue';
 import ShowFuture from '../components/ShowFuture.vue';
 import PopularShows from '../components/PopularShows.vue';
+import AdBanner from '../components/AdBanner.vue'
 
 const { shows, unseen } = storeToRefs(useShowsStore())
 const filterOutSeen = ref(localStorage.getItem('filterOutSeen') || false)
@@ -77,6 +78,8 @@ function toggleFilterOutSeen() {
               </h2>
             </div>
             <ShowPast v-for="show in pastShows" :key="show.id" :show="show" />
+
+            <AdBanner v-if="filterOutSeen" />
           </div>
           <div class="col-sm-6">
             <div class="greenbg row">
