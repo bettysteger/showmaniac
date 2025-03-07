@@ -57,8 +57,7 @@ function onBlur() {
   <div class="dropdown">
     <ul class="dropdown-menu" :class="{show: focused && (results.length || popularShows.length)}">
       <li v-for="result in (results.length ? results : popularShows)" :key="result.id">
-        <a class="dropdown-item" @click.prevent="showsStore.add(result)" href
-           :class="{popular: result.browsePopular}">
+        <a class="dropdown-item" @click.prevent="showsStore.add(result)" href>
           <img :src="result.image?.medium || 'https://dummyimage.com/43x60/ffffff/ffffff.png'">
           {{ result.name }}<br>
           <small class="text-muted">
@@ -86,6 +85,17 @@ function onBlur() {
   border-top: none;
   width: 100%;
   max-width: calc(100vw - 60px);
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
 
   > li > a {
     padding: 4px 12px;
