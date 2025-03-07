@@ -284,13 +284,6 @@ a:hover .fa {
   border-color: var(--green);
 }
 
-.tooltip {
-  text-shadow: none;
-  white-space: nowrap;
-  text-transform: none;
-  font-weight: 300;
-}
-
 .fa-clock-o:hover {
   color: inherit;
 }

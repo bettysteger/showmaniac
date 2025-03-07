@@ -29,9 +29,9 @@
           <p>
             {{ formatDate(show.latestepisode?.date) }} &nbsp;
             <b>
-              <a v-if="show.name" uib-tooltip="search this episode" :href="`https://google.com/search?q=${parseName(show)} ${show.latestepisode?.number}`" target="_blank">{{ show.latestepisode?.number }}</a>
+              <a v-if="show.name" v-tooltip="'search this episode'" :href="`https://google.com/search?q=${parseName(show)} ${show.latestepisode?.number}`" target="_blank">{{ show.latestepisode?.number }}</a>
             </b>
-            <!-- <a v-if="isDate(show.latestepisode?.date)" uib-tooltip="watch online" ng-href="{{show.watchseries()}}" target="_blank"><i class="fa fa-fw fa-play-circle-o"></i></a> -->
+            <!-- <a v-if="isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchseries(show)" target="_blank"><i class="fa fa-fw fa-play-circle-o"></i></a> -->
           </p>
 
           <h3>Next airdate</h3>

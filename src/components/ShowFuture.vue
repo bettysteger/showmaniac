@@ -9,7 +9,7 @@
       </p>
     </div>
     <div class="col-xs-2 text-right">
-      <i @click="showsStore.remove(show)" title="remove show" class="fa fa-times-circle"></i><i v-if="show.loading" class="fa fa-circle-o-notch fa-spin"></i>
+      <i @click="showsStore.remove(show)" v-tooltip="'remove show'" class="fa fa-times-circle"></i><i v-if="show.loading" class="fa fa-circle-o-notch fa-spin"></i>
     </div>
   </div>
 </template>

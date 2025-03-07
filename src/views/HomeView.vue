@@ -73,7 +73,7 @@ function toggleFilterOutSeen() {
           <div class="col-sm-6">
             <div class="greenbg row">
               <h2>
-                <i v-if="!unseen.length" class="fa fa-trophy pull-right" title="WOW! You've seen every episode"></i>
+                <i v-if="!unseen.length" class="fa fa-trophy pull-right" v-tooltip="'WOW! You\'ve seen every episode'"></i>
                 past
               </h2>
             </div>
