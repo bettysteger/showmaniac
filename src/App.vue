@@ -90,9 +90,9 @@ onMounted(() => {
           </a>
           <a href="#" @click.prevent="logout" class="navbar-link">logout</a>
         </p>
-        <ul class="nav navbar-nav navbar-right">
-          <li v-if="!user"><a href="#" @click.prevent="showLoginForm = !showLoginForm">login / signup</a></li>
-          <li v-if="!user"><a href="#" @click.prevent="loginWithFacebook">login with facebook</a></li>
+        <ul v-else class="nav navbar-nav navbar-right">
+          <li><a href="#" @click.prevent="showLoginForm = !showLoginForm">login / signup</a></li>
+          <li><a href="#" @click.prevent="loginWithFacebook">login with facebook</a></li>
         </ul>
         <form class="navbar-form navbar-right">
           <Search />
