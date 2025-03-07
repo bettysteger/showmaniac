@@ -24,6 +24,9 @@ const user = ref(null)
 const showLoginForm = ref(false)
 const showEmailForm = ref(false)
 
+// Add navbar collapse state
+const isNavCollapsed = ref(true)
+
 // Auth methods
 const handleAuth = async (email, password) => {
   if (showLoginForm.value && !showEmailForm.value) {
@@ -70,7 +73,10 @@ onMounted(() => {
     <div class="container">
       <!-- Brand and toggle get grouped for better mobile display -->
       <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+        <button type="button"
+                class="navbar-toggle collapsed"
+                @click="isNavCollapsed = !isNavCollapsed"
+                :aria-expanded="!isNavCollapsed">
           <span class="sr-only">Toggle navigation</span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
@@ -79,7 +85,9 @@ onMounted(() => {
         <a class="navbar-brand" href="/"><img src="/images/logo.png" alt="showmaniac"></a>
       </div>
 
-      <div class="collapse navbar-collapse" id="navbar-collapse">
+      <div class="collapse navbar-collapse"
+           id="navbar-collapse"
+           :class="{ 'in': !isNavCollapsed }">
         <p v-if="user" class="navbar-text navbar-right">
           {{ user.providerData[0].displayName || user.email?.replace('@temp.com', '') }} &nbsp;
           <a v-if="user.email?.includes('@temp.com')"
