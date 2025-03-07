@@ -4,10 +4,12 @@ import { useShowsStore } from '../stores/shows';
 import { storeToRefs } from 'pinia';
 import ShowPast from '../components/ShowPast.vue';
 import ShowFuture from '../components/ShowFuture.vue';
+import PopularShows from '../components/PopularShows.vue';
 
 const { shows, unseen } = storeToRefs(useShowsStore())
 const filterOutSeen = ref(localStorage.getItem('filterOutSeen') || false)
 const showFutureCol = ref(true)
+const showPopular = ref(false)
 const query = ref('')
 
 function filterQuery(show) {
@@ -86,7 +88,19 @@ function toggleFilterOutSeen() {
           </div>
         </div>
       </div>
+      <!-- Popular shows -->
+      <div class="col-md-4">
+        <div class="greenbg row">
+          <h2 @click="showPopular=!showPopular" role="button">
+            <i class="fa pull-right" :class="'fa-chevron-'+(showPopular ? 'up' : 'down')"></i>
+            popular
+          </h2>
+        </div>
+        <div v-if="showPopular" class="row">
+          <PopularShows />
+        </div>
 
+      </div>
     </div>
   </main>
 </template>

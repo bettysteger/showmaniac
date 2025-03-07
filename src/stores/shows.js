@@ -152,7 +152,13 @@ export const useShowsStore = defineStore('shows', () => {
     if(!show.url) { return; }
     return '/tv'+show.url.replace(/https?:\/\/www\.tvmaze\.com\/shows/, '');
   }
-  return { shows, add, remove, toggleSeen, update, modalLink, unseen }
+
+  async function singlesearch(query) {
+    const data = await fetch(`${apiUrl.replace('shows/', '')}singlesearch/shows?q=${encodeURIComponent(query)}`)
+    return data.json()
+  }
+
+  return { shows, add, remove, toggleSeen, update, singlesearch, modalLink, unseen }
 })
 
 
