@@ -1,11 +1,47 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import { auth, db } from '../firebase/config'
+import { ref as dbRef, set, onValue } from 'firebase/database'
 
 const apiUrl = 'https://api.tvmaze.com/shows/';
 
 export const useShowsStore = defineStore('shows', () => {
   const shows = ref(JSON.parse(localStorage.getItem('showmaniac')) || []);
   const loadedCount = ref(0);
+  let dbUnsubscribe = null;
+  let isInitialSync = true;
+  let isSyncing = false;
+
+  // Subscribe to Firebase when auth state changes
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      const userShowsRef = dbRef(db, `users/${user.uid}/shows`);
+
+      // First time login - upload local shows
+      if (isInitialSync && shows.value.length > 0) {
+        set(userShowsRef, shows.value);
+      }
+
+      // Subscribe to changes
+      dbUnsubscribe = onValue(userShowsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && !isSyncing) {
+          isSyncing = true;
+          shows.value = data;
+          localStorage.setItem('showmaniac', JSON.stringify(shows.value));
+          isSyncing = false;
+        }
+        isInitialSync = false;
+      });
+    } else {
+      // Unsubscribe when logged out
+      if (dbUnsubscribe) {
+        dbUnsubscribe();
+        dbUnsubscribe = null;
+      }
+      isInitialSync = true;
+    }
+  });
 
   /**
    * Extends show objects with API info (nextepisode, previousepisode, etc.)
@@ -23,7 +59,19 @@ export const useShowsStore = defineStore('shows', () => {
   updateShows();
 
   function updateStorage() {
+    if (isSyncing) return;
+
     localStorage.setItem('showmaniac', JSON.stringify(shows.value));
+
+    // Sync to Firebase if user is logged in
+    const user = auth.currentUser;
+    if (user) {
+      isSyncing = true;
+      const userShowsRef = dbRef(db, `users/${user.uid}/shows`);
+      set(userShowsRef, shows.value).finally(() => {
+        isSyncing = false;
+      });
+    }
   }
 
   function add(show) {

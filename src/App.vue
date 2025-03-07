@@ -1,12 +1,65 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
+import { auth } from './firebase/config'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  FacebookAuthProvider,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth'
 import Search from './components/Search.vue';
 import ShowModal from './views/ShowModal.vue';
+import LoginForm from './components/LoginForm.vue';
 
 const seen1 = ref(false)
 const seen2 = ref(true)
 const seen3 = ref(false)
+
+// Auth state
+const user = ref(null)
+const showLoginForm = ref(false)
+const showEmailForm = ref(false)
+
+// Auth methods
+const handleAuth = async (email, password) => {
+  if (showLoginForm.value && !showEmailForm.value) {
+    await signInWithEmailAndPassword(auth, email, password)
+  } else {
+    await createUserWithEmailAndPassword(auth, email, password)
+  }
+  showLoginForm.value = false
+}
+
+const loginWithFacebook = async () => {
+  try {
+    const provider = new FacebookAuthProvider()
+    await signInWithPopup(auth, provider)
+  } catch (error) {
+    console.error('Facebook login error:', error)
+  }
+}
+
+const logout = async () => {
+  try {
+    await signOut(auth)
+  } catch (error) {
+    console.error('Logout error:', error)
+  }
+}
+
+// Listen to auth state changes
+onMounted(() => {
+  const unsubscribe = onAuthStateChanged(auth, (userData) => {
+    console.log('Auth state changed:', userData ? 'logged in' : 'logged out')
+    user.value = userData
+  })
+
+  // Cleanup subscription on component unmount
+  onUnmounted(() => unsubscribe())
+})
 </script>
 
 <template>
@@ -24,18 +77,20 @@ const seen3 = ref(false)
       </div>
 
       <div class="collapse navbar-collapse" id="navbar-collapse">
-        <!-- <p ng-if="_.authData" class="navbar-text navbar-right" ng-cloak>
-          {{ _.authData.providerData[0].displayName || _.authData.email.replace('@temp.com', '') }} &nbsp;
-          <a ng-if="_.authData.email.indexOf('@temp.com') > 0" @click="_.showEmailForm=!_.showEmailForm" class="navbar-link">
+        <p v-if="user" class="navbar-text navbar-right">
+          {{ user.providerData[0].displayName || user.email?.replace('@temp.com', '') }} &nbsp;
+          <a v-if="user.email?.includes('@temp.com')"
+             href="#"
+             @click.prevent="showEmailForm = !showEmailForm"
+             class="navbar-link">
             Set email
           </a>
-          <a @click="_.logout()" class="navbar-link">logout</a>
+          <a href="#" @click.prevent="logout" class="navbar-link">logout</a>
         </p>
         <ul class="nav navbar-nav navbar-right">
-          <li ng-if="!_.authData"><a @click="_.loginForm=!_.loginForm">login / signup</a></li>
-          <li ng-if="!_.authData"><a @click="_.oauth('facebook')">login with facebook</a></li>
-          <li ng-if="_.authData"><a href=""></a></li>
-        </ul> -->
+          <li v-if="!user"><a href="#" @click.prevent="showLoginForm = !showLoginForm">login / signup</a></li>
+          <li v-if="!user"><a href="#" @click.prevent="loginWithFacebook">login with facebook</a></li>
+        </ul>
         <form class="navbar-form navbar-right">
           <Search />
         </form>
@@ -44,6 +99,8 @@ const seen3 = ref(false)
   </nav>
 
   <RouterView />
+
+  <LoginForm v-if="showLoginForm" :onLogin="handleAuth" @close="showLoginForm = false" />
 
   <p>&nbsp;</p>
 
