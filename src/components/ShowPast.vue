@@ -11,33 +11,32 @@
         <!-- <a ng-href="{{_.availability[show.id].amazon}}" target="_blank" ng-class="{freeForPrime:_.availability[show.id].freeForPrime, invisible:!_.availability[show.id].amazon}" v-tooltip="'watch via Amazon'" ><i class="fa fa-fw fa-amazon"></i></a> -->
         &nbsp;
         <small v-if="show.lastSeen && !show.seen">
-          <span v-if="!show.changeLastSeen" v-tooltip="'click to edit'" @click="show.changeLastSeen=true; show.getEpisodes()">{{ show.lastSeen }}</span>
+          <span v-if="!changeLastSeen" v-tooltip="'click to edit'" @click="changeLastSeen=true; getEpisodes()">{{ show.lastSeen }}</span>
 
-          <select v-if="show.changeLastSeen" ng-model="show.lastSeen" ng-options="e for e in show.episodes"
-                  ng-change="show.seen = show.lastSeen == show.latestepisode?.number;show.changeLastSeen=false;_.updateStorage()"
-                  ng-blur="show.changeLastSeen=false"></select> seen <a v-if="show.changeLastSeen" ng-click="show.lastSeen=null; show.changeLastSeen=false; _.updateStorage();">&times;</a>
+          <select v-else v-model="show.lastSeen" @change="handleEpisodeChange" @blur="changeLastSeen = false">
+            <option v-for="episode in episodes" :key="episode" :value="episode">{{ episode }}</option>
+          </select> seen <a v-if="changeLastSeen" @click.prevent="clearLastSeen" href>&times;</a>
         </small>
       </p>
     </div>
     <div class="col-xs-2 text-right" v-if="isDate(show.latestepisode?.date)">
-      <i @click="showsStore.toggleSeen(show)" v-tooltip="'seen?'" class="fa fa-check-circle" :class="{green:show.seen}"></i><i v-if="show.loading && isDate(show.nextepisode?.date)" class="fa fa-circle-o-notch fa-spin"></i>
+      <i @click="toggleSeen" v-tooltip="'seen?'" class="fa fa-check-circle" :class="{green:show.seen}"></i><i v-if="show.loading && isDate(show.nextepisode?.date)" class="fa fa-circle-o-notch fa-spin"></i>
       <!-- <br><i v-if="!show.seen" ng-click="_.catchUp(show)" v-tooltip="catch up!" tooltip-placement="bottom" class="fa fa-arrow-circle-up"></i> -->
     </div>
   </div>
 </template>
 <script setup>
+import { ref } from 'vue';
 import { isDate, formatDate } from './formatDate.js';
 import { useShowsStore } from '../stores/shows';
 import { vTooltip } from '../directives/tooltip';
 
 const showsStore = useShowsStore()
 
-defineProps({
-  show: {
-    type: Object,
-    required: true,
-  },
-})
+const show = defineModel({ type: Object, required: true })
+
+const changeLastSeen = ref(false)
+const episodes = ref([])
 
 /**
  * Removes all special chars, all except numbers, letters and spaces.
@@ -76,8 +75,39 @@ function nextEpisodeNo(show) {
     return show.latestepisode?.number;
   }
 }
-</script>
 
-<style lang="scss">
-@import '../assets/tooltip.scss';
-</style>
+// clicking on check circle: seen
+async function toggleSeen() {
+  show.value.seen = !show.value.seen;
+
+  const episodeNo = show.value.latestepisode?.number;
+  if (episodeNo) {
+    if (show.value.seen) {
+      show.value.lastSeen = episodeNo;
+    } else {
+      await getEpisodes();
+      const prevIndex = episodes.value.indexOf(episodeNo) - 1;
+      show.value.lastSeen = episodes.value[prevIndex];
+    }
+  }
+  showsStore.updateStorage();
+}
+
+async function getEpisodes() {
+  if (episodes.value.length) { return; }
+
+  episodes.value = await showsStore.getEpisodes(show.value);
+}
+
+function handleEpisodeChange() {
+  show.value.seen = show.value.lastSeen == show.value.latestepisode?.number;
+  changeLastSeen.value = false;
+  showsStore.updateStorage();
+}
+
+function clearLastSeen() {
+  delete show.value.lastSeen;
+  changeLastSeen.value = false;
+  showsStore.updateStorage();
+}
+</script>

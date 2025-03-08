@@ -106,25 +106,6 @@ export const useShowsStore = defineStore('shows', () => {
     updateStorage();
   }
 
-  // clicking on check circle: seen
-  function toggleSeen(show) {
-    show.seen = !show.seen;
-
-    const episodeNo = show.latestepisode?.number;
-    if (episodeNo) {
-      if (show.seen) {
-        show.lastSeen = episodeNo;
-      } else {
-        // show.getEpisodes(function () {
-        //   var prevIndex = show.episodes.indexOf(episodeNo) - 1;
-        //   show.lastSeen = show.episodes[prevIndex];
-        //   updateStorage();
-        // });
-      }
-    }
-    updateStorage();
-  }
-
   const unseen = computed(() => shows.value.filter((s) => !s.seen))
 
   async function getInfo(show) {
@@ -155,6 +136,12 @@ export const useShowsStore = defineStore('shows', () => {
     return getInfo(show);
   }
 
+  async function getEpisodes(show) {
+    const data = await fetch(`${apiUrl}${show.id}/episodes`)
+    const json = await data.json()
+    return json.map(convertEpisodeNo)
+  }
+
   function modalLink(show) {
     if(!show.url) { return; }
     return '/tv'+show.url.replace(/https?:\/\/www\.tvmaze\.com\/shows/, '');
@@ -165,7 +152,7 @@ export const useShowsStore = defineStore('shows', () => {
     return data.json()
   }
 
-  return { shows, add, remove, toggleSeen, update, singlesearch, modalLink, unseen }
+  return { shows, add, remove, update, singlesearch, getEpisodes, modalLink, unseen, updateStorage }
 })
 
 

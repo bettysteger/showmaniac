@@ -77,7 +77,7 @@ function toggleFilterOutSeen() {
                 past
               </h2>
             </div>
-            <ShowPast v-for="show in pastShows" :key="show.id" :show="show" />
+            <ShowPast v-for="(show, i) in pastShows" :key="show.id" v-model="pastShows[i]" />
 
             <AdBanner v-if="filterOutSeen" />
           </div>

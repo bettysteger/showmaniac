@@ -1,4 +1,5 @@
 @import './base.css';
+@import './tooltip.scss';
 
 .browsehappy {
   margin: 0.2em 0;
