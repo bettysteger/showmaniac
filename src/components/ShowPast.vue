@@ -5,9 +5,9 @@
       <p>
         {{ formatDate(show.latestepisode?.date) }} &nbsp;
         <b>
-          <a v-tooltip="'search this episode'" :href="`http://google.com/search?q=${parseName(show)} ${show.latestepisode?.number}`" target="_blank" rel="noopener">{{ show.latestepisode?.number }}</a>
+          <a v-tooltip="'search this episode'" :href="`http://google.com/search?q=${parsedName} ${show.latestepisode?.number}`" target="_blank" rel="noopener">{{ show.latestepisode?.number }}</a>
         </b>
-        <a v-if="isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchseries(show)" target="_blank" rel="noopener"><i class="fa fa-fw fa-play-circle-o"></i></a>
+        <a v-if="isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchseriesUrl" target="_blank" rel="noopener"><i class="fa fa-fw fa-play-circle-o"></i></a>
         <!-- <a ng-href="{{_.availability[show.id].amazon}}" target="_blank" ng-class="{freeForPrime:_.availability[show.id].freeForPrime, invisible:!_.availability[show.id].amazon}" v-tooltip="'watch via Amazon'" ><i class="fa fa-fw fa-amazon"></i></a> -->
         &nbsp;
         <small v-if="show.lastSeen && !show.seen">
@@ -20,13 +20,13 @@
       </p>
     </div>
     <div class="col-xs-2 text-right" v-if="isDate(show.latestepisode?.date)">
-      <i @click="toggleSeen" v-tooltip="'seen?'" class="fa fa-check-circle" :class="{green:show.seen}"></i><i v-if="show.loading && isDate(show.nextepisode?.date)" class="fa fa-circle-o-notch fa-spin"></i>
-      <!-- <br><i v-if="!show.seen" ng-click="_.catchUp(show)" v-tooltip="catch up!" tooltip-placement="bottom" class="fa fa-arrow-circle-up"></i> -->
+      <i @click="toggleSeen" v-tooltip="'seen?'" class="fa fa-check-circle" :class="{green:show.seen}" role="button"></i><i v-if="show.loading && isDate(show.nextepisode?.date)" class="fa fa-circle-o-notch fa-spin"></i>
+      <br><i v-if="!show.seen" @click="catchUp" v-tooltip="'catch up!'" tooltip-placement="bottom" class="fa fa-arrow-circle-up" role="button"></i>
     </div>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { isDate, formatDate } from './formatDate.js';
 import { useShowsStore } from '../stores/shows';
 import { vTooltip } from '../directives/tooltip';
@@ -45,34 +45,34 @@ const episodes = ref([])
  *   <a href="https://www.google.com/search?q={{show.parseName()}}">
  * @return {String}      name without special chars
  */
-function parseName(show) {
-  return show.name.replace(/[^ a-zA-Z0-9]/g, '');
-}
+const parsedName = computed(() => {
+  return show.value.name.replace(/[^ a-zA-Z0-9]/g, '');
+})
 
 /**
  * Generates watchseries Link
  * @example
- *   https://www.watchseries1.video/tv-series/big-little-lies-season-2-episode-1
+ *   https://www.watchseries1.fun/tv-series/big-little-lies-season-2-episode-1
  * @return {String}      link to watchseries-online
  */
-function watchseries(show) {
-  var episodeNo = nextEpisodeNo(show);
-  var series = show.name.replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
-  var season = parseInt(episodeNo.split('x')[0]);
-  var episode = parseInt(episodeNo.split('x')[1]);
+const watchseriesUrl = computed(() => {
+  let episodeNo = nextEpisodeNo();
+  let series = show.value.name.replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
+  let season = parseInt(episodeNo.split('x')[0]);
+  let episode = parseInt(episodeNo.split('x')[1]);
 
-  return 'https://www.watchseries1.video/tv-series/' + series + '-season-' + season + '-episode-' + episode;
-}
+  return `https://www.watchseries1.fun/tv-series/${series}-season-${season}-episode-${episode}`
+})
 
-function nextEpisodeNo(show) {
-  if (!show.seen && show.episodes?.length) {
+function nextEpisodeNo() {
+  if (!show.value.seen && episodes.value.length) {
 
-    var nextIndex = show.lastSeen ? show.episodes.indexOf(show.lastSeen) + 1 : 0;
-    nextIndex = show.episodes[nextIndex] ? nextIndex : show.episodes.length - 1;
+    let nextIndex = show.value.lastSeen ? episodes.value.indexOf(show.value.lastSeen) + 1 : 0;
+    nextIndex = episodes.value[nextIndex] ? nextIndex : episodes.value.length - 1;
 
-    return show.episodes[nextIndex];
+    return episodes.value[nextIndex];
   } else {
-    return show.latestepisode?.number;
+    return show.value.latestepisode?.number;
   }
 }
 
@@ -108,6 +108,16 @@ function handleEpisodeChange() {
 function clearLastSeen() {
   delete show.value.lastSeen;
   changeLastSeen.value = false;
+  showsStore.updateStorage();
+}
+
+async function catchUp() {
+  if(show.value.seen) {return;} // already seen
+
+  await getEpisodes();
+
+  show.value.lastSeen = nextEpisodeNo();
+  show.value.seen = show.value.lastSeen === show.value.latestepisode.number;
   showsStore.updateStorage();
 }
 </script>
