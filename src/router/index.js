@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import PrivacyPolicyView from '../views/PrivacyPolicyView.vue'
 import DisclaimerView from '../views/DisclaimerView.vue'
+import SearchView from '../views/SearchView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,11 @@ const router = createRouter({
       path: '/disclaimer',
       name: 'disclaimer',
       component: DisclaimerView
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: SearchView
     },
 
     // {
