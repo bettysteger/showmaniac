@@ -106,4 +106,5 @@ function toggleFilterOutSeen() {
       </div>
     </div>
   </main>
+  <RouterView />
 </template>

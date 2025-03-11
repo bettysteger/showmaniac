@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import ModalRoute from '../views/ModalRoute.vue'
 import PrivacyPolicyView from '../views/PrivacyPolicyView.vue'
 import DisclaimerView from '../views/DisclaimerView.vue'
 import SearchView from '../views/SearchView.vue'
@@ -11,17 +12,21 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      children: [{
+        path: '/popular/:page?',
+        component: ModalRoute, props: {size: 'lg'},
+        children: [{
+          path: '',
+          name: 'popular',
+          component: PopularView
+        }]
+      }]
     },
     {
       path: '/tv/:id/:slug',
       name: 'tv',
       component: HomeView
-    },
-    {
-      path: '/popular/:page?',
-      name: 'popular',
-      component: PopularView
     },
     {
       path: '/search',

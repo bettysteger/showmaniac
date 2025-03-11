@@ -4,6 +4,8 @@ import { useRoute } from 'vue-router';
 import { usePopularStore } from '../stores/popular';
 import { useShowsStore } from '../stores/shows';
 
+defineEmits(['closeModal'])
+
 const route = useRoute();
 const popularStore = usePopularStore();
 const showsStore = useShowsStore();
@@ -48,8 +50,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="popular-shows">
-    <h2>Popular Shows</h2>
+  <div class="modal-header">
+    <a class="close" @click.prevent="$emit('closeModal')">&times;</a>
+    <h1 class="modal-title text-center">Popular Shows</h1>
+  </div>
+  <div class="modal-body popular-shows">
     <div class="shows-grid">
       <div v-for="show in popularStore.popularShows"
            :key="show.id"
@@ -75,7 +80,6 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .popular-shows {
-  padding: 20px;
 
   .shows-grid {
     display: grid;
