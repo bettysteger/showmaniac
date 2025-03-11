@@ -4,6 +4,7 @@ import ModalRoute from '../views/ModalRoute.vue'
 import PrivacyPolicyView from '../views/PrivacyPolicyView.vue'
 import DisclaimerView from '../views/DisclaimerView.vue'
 import SearchView from '../views/SearchView.vue'
+import ShowDetailView from '../views/ShowDetailView.vue'
 import PopularView from '../views/PopularView.vue'
 
 const router = createRouter({
@@ -21,12 +22,15 @@ const router = createRouter({
           name: 'popular',
           component: PopularView
         }]
+      }, {
+        path: '/tv/:id/:slug',
+        component: ModalRoute,
+        children: [{
+          path: '',
+          name: 'tv',
+          component: ShowDetailView
+        }]
       }]
-    },
-    {
-      path: '/tv/:id/:slug',
-      name: 'tv',
-      component: HomeView
     },
     {
       path: '/search',

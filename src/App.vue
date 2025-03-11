@@ -11,7 +11,6 @@ import {
   onAuthStateChanged
 } from 'firebase/auth'
 import Search from './components/Search.vue';
-import ShowModal from './views/ShowModal.vue';
 import LoginForm from './components/LoginForm.vue';
 import LoadingSpinner from './components/LoadingSpinner.vue'
 
@@ -149,5 +148,4 @@ onMounted(() => {
       <div class="tvshow row" :class="{seen:seen1}"> <div class="col-xs-10"> <h4>The Big Bang Theory</h4> <p> 26 Sep 2017 02:00 &nbsp; <b> <a ng-href="http://google.com/search?q=The Big Bang Theory 11x01" target="_blank" rel="noopener" href="http://google.com/search?q=The Big Bang Theory 11x01">11x01</a> </b> </p> </div> <div class="col-xs-2 text-right"> <i @click="seen1=!seen1" title="seen?" class="fa fa-check-circle" :class="{green:seen1}"></i> </div> </div><div class="tvshow row" :class="{seen:seen2}"> <div class="col-xs-10"> <h4>Game of Thrones</h4> <p> 28 Aug 2017 03:00 &nbsp; <b> <a ng-href="http://google.com/search?q=Game of Thrones 07x07" target="_blank" rel="noopener" href="http://google.com/search?q=Game of Thrones 07x07">07x07</a> </b> </p> </div> <div class="col-xs-2 text-right"> <i @click="seen2=!seen2" title="seen?" class="fa fa-check-circle" :class="{green:seen2}"></i> </div> </div><div class="tvshow row" :class="{seen:seen3}"> <div class="col-xs-10"> <h4>Sherlock</h4> <p> 15 Jan 2017 22:00 &nbsp; <b> <a ng-href="http://google.com/search?q=Sherlock 04x03" target="_blank" rel="noopener" href="http://google.com/search?q=Sherlock 04x03">04x03</a> </b> </p> </div> <div class="col-xs-2 text-right"> <i @click="seen3=!seen3" title="seen?" class="fa fa-check-circle" :class="{green:seen3}"></i> </div> </div>
     </div>
   </div>
-  <ShowModal />
 </template>
