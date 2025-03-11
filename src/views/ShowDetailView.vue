@@ -47,7 +47,8 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { formatDate, isDate } from '../components/formatDate.js';
+// import { formatDate, isDate } from '../components/formatDate.js';
+import { formatDate } from '../components/formatDate.js';
 import { useShowsStore } from '../stores/shows.js';
 
 const emit = defineEmits(['closeModal'])

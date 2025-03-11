@@ -186,7 +186,7 @@ function parseDateTime(episode) {
     var datetime = new Date(episode.airstamp); // test time (hour)
     var isValidDate = datetime.getTime() === datetime.getTime();
     return isValidDate ? datetime : 'tba';
-  } catch (e) {
+  } catch (e) { // eslint-disable-line no-unused-vars
     return 'tba';
   }
 }
