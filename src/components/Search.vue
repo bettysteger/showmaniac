@@ -56,6 +56,9 @@ function onBlur() {
   </div>
   <div class="dropdown">
     <ul class="dropdown-menu" :class="{show: focused && (results.length || popularShows.length)}">
+      <li>
+        <router-link to="/popular" class="dropdown-item popular">Browse Popular</router-link>
+      </li>
       <li v-for="result in (results.length ? results : popularShows)" :key="result.id">
         <a class="dropdown-item" @click.prevent="showsStore.add(result)" href>
           <img :src="result.image?.medium || 'https://dummyimage.com/43x60/ffffff/ffffff.png'">
@@ -68,9 +71,6 @@ function onBlur() {
           </small>
         </a>
       </li>
-      <!-- <li>
-        <a class="dropdown-item popular" @click.prevent="popularStore.showPopular = true" href>Browse Popular</a>
-      </li> -->
     </ul>
   </div>
 </template>
