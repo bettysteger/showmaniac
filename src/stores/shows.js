@@ -41,6 +41,17 @@ export const useShowsStore = defineStore('shows', () => {
         }
         isInitialSync = false;
       });
+
+      if(window.mixpanel) {
+        const providerData = user.providerData && user.providerData[0];
+        window.mixpanel.identify(user.uid);
+        window.mixpanel.people.set({
+          '$email': providerData?.email || user.email,
+          '$last_name': providerData?.displayName || user.email,
+          showsLength: shows.value.length,
+          toWatchLength: shows.value.filter((show) => !show.seen).length
+        });
+      }
     } else {
       // Unsubscribe when logged out
       if (dbUnsubscribe) {
@@ -99,6 +110,7 @@ export const useShowsStore = defineStore('shows', () => {
 
     shows.value.push(show);
     update(show).then(updateStorage)
+    window.mixpanel?.track('Add TV Show', {id: show.id, name: show.name});
   }
 
   function remove(show) {

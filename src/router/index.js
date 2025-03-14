@@ -50,4 +50,10 @@ const router = createRouter({
   ]
 })
 
+router.afterEach((to) => {
+  if (window.ga) {
+    window.ga('send', 'pageview', to.path)
+  }
+})
+
 export default router
