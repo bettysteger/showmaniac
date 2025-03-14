@@ -34,16 +34,10 @@ function toggleFilterOutSeen() {
   filterOutSeen.value = !filterOutSeen.value
   if(filterOutSeen.value) {
     localStorage.setItem('filterOutSeen', true)
-
-    if (!window.mixpanel) return;
-
-    setTimeout(() => {
-      const ad = document.querySelector('.adsbygoogle');
-      window.mixpanel.track('Check seenFilter', {hasAdBlocker: ad ? !ad.children.length : true});
-    }, 2000)
   } else {
     localStorage.removeItem('filterOutSeen')
   }
+  window.mixpanel?.track('Check seenFilter', { filterOutSeen: filterOutSeen.value })
 }
 </script>
 <template>
