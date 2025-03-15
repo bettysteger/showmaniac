@@ -5,9 +5,7 @@ in your local time. All on **1 page**, no need to click around.
 
 PWA built with Vue 3, Vite, a little good old Bootstrap CSS, and JS. No backend, all data is stored in the browser's local storage. Firebase is used for authentication, and if you want to sync your data across devices, you need to sign in.
 
-Deployed via Netlify
-
-[![Netlify Status](https://api.netlify.com/api/v1/badges/733e4f7e-13ac-460a-89f1-c8088c8dd79a/deploy-status)](https://app.netlify.com/sites/showmaniac/deploys)
+Deployed via [![Netlify](https://api.netlify.com/api/v1/badges/733e4f7e-13ac-460a-89f1-c8088c8dd79a/deploy-status)](https://app.netlify.com/sites/showmaniac/deploys)
 
 ## Features
 
