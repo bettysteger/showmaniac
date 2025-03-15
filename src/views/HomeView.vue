@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia';
 import ShowPast from '../components/ShowPast.vue';
 import ShowFuture from '../components/ShowFuture.vue';
 import PopularShows from '../components/PopularShows.vue';
-import AdBanner from '../components/AdBanner.vue'
+import AdBanner from '../components/AdBanner.vue';
 
 const { shows, unseen } = storeToRefs(useShowsStore())
 const filterOutSeen = ref(localStorage.getItem('filterOutSeen') || false)
@@ -49,7 +49,8 @@ function toggleFilterOutSeen() {
         <h3>
           <span v-if="unseen.length">
             {{ unseen.length }} to watch
-            <i :title="filterOutSeen ? 'Show all' : 'Hide seen'"
+            <i v-if="unseen.length && unseen.length < shows.length"
+                v-tooltip="filterOutSeen ? 'Show all' : 'Hide seen'"
                 @click="toggleFilterOutSeen" class="fa fa-toggle-on pull-right"
                 :class="filterOutSeen ? 'green' : 'fa-flip-horizontal'"></i>
           </span>

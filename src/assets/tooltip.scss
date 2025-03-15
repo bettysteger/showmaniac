@@ -21,4 +21,7 @@
     top: 100%;
     bottom: auto;
   }
+  &.fa-flip-horizontal::after { // revert scale(-1, 1) from the icon
+    transform: translateX(-50%) scale(-1, 1);
+  }
 }

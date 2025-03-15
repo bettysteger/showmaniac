@@ -5,5 +5,8 @@ export const vTooltip = {
   },
   updated(el, binding) {
     el.setAttribute('data-tooltip', binding.value)
+    if (!el.classList.contains('tooltip-trigger')) {
+      el.classList.add('tooltip-trigger')
+    }
   }
 }
