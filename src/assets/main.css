@@ -1,3 +1,5 @@
+/* TODO: change to tailwind or bulma */
+@import 'bootstrap/dist/css/bootstrap.css';
 @import './base.css';
 @import './tooltip.scss';
 
