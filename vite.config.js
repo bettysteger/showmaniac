@@ -10,6 +10,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,gif}'], // Cache static files
         runtimeCaching: [
