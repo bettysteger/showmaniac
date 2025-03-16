@@ -25,8 +25,18 @@ const pastShows = computed(() => [...shows.value].filter(filterQuery).filter(sho
 }))
 // sort future shows by nextepisode.date (tba should be at end)
 const futureShows = computed(() => [...shows.value].filter(filterQuery).sort((a, b) => {
-  if (a.nextepisode?.date === 'tba' || a.nextepisode?.date == 'ENDED') return 1;
-  if (b.nextepisode?.date === 'tba' || b.nextepisode?.date == 'ENDED') return -1;
+  const order = (status) => {
+    if (status === 'ENDED') return 2;  // ENDED goes last
+    if (status === 'tba') return 1;    // TBA goes before ENDED
+    return 0;  // Sort by date if neither
+  };
+
+  const aOrder = order(a.nextepisode?.date);
+  const bOrder = order(b.nextepisode?.date);
+
+  if (aOrder !== bOrder) return aOrder - bOrder;
+
+  // If both are neither "tba" nor "ENDED", sort by date
   return new Date(a.nextepisode?.date) - new Date(b.nextepisode?.date);
 }))
 
