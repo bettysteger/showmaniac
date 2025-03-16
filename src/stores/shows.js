@@ -167,27 +167,21 @@ export const useShowsStore = defineStore('shows', () => {
   return { shows, add, remove, update, singlesearch, getEpisodes, modalLink, unseen, updateStorage }
 })
 
-
+// Helpers
 function updateEpisodeDates(show) {
-  var latest = show.latestepisode = show._embedded?.previousepisode || {};
-  var next = show.nextepisode = show._embedded?.nextepisode || {};
-  delete show._embedded;
-  delete show._links;
-  delete show.externals;
+  const latest = show.latestepisode = show._embedded?.previousepisode || {};
+  const next = show.nextepisode = show._embedded?.nextepisode || {};
+  ['_embedded', '_links', 'externals'].forEach((key) => delete show[key]);
 
-  if(show.status === 'Ended') {
-    next.date = 'ENDED';
-  } else {
-    next.date = parseDateTime(next);
-  }
+  next.date = show.status === 'Ended' ? 'ENDED' : parseDateTime(next);
   latest.date = parseDateTime(latest);
 }
 
 function convertEpisodeNo(episode) {
-  if(episode.number) {
-    episode.season = episode.season.toString();
-    episode.number = episode.number.toString();
-    episode.number = (episode.season.length === 1 ? '0'+episode.season : episode.season) + 'x' + (episode.number.length === 1 ? '0'+episode.number : episode.number);
+  if (episode.number) {
+    const season = episode.season.toString().padStart(2, '0');
+    const number = episode.number.toString().padStart(2, '0');
+    episode.number = `${season}x${number}`;
     return episode.number;
   }
 }
@@ -195,10 +189,9 @@ function convertEpisodeNo(episode) {
 function parseDateTime(episode) {
   convertEpisodeNo(episode);
   try {
-    var datetime = new Date(episode.airstamp); // test time (hour)
-    var isValidDate = datetime.getTime() === datetime.getTime();
-    return isValidDate ? datetime : 'tba';
-  } catch (e) { // eslint-disable-line no-unused-vars
+    const datetime = new Date(episode.airstamp);
+    return isNaN(datetime) ? 'tba' : datetime;
+  } catch {
     return 'tba';
   }
 }
