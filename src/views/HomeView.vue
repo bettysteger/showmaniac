@@ -6,7 +6,6 @@ import ShowPast from '../components/ShowPast.vue';
 import ShowFuture from '../components/ShowFuture.vue';
 import PopularShows from '../components/PopularShows.vue';
 import AdBanner from '../components/AdBanner.vue';
-import Settings from '../components/Settings.vue';
 
 const { shows, unseen } = storeToRefs(useShowsStore())
 const filterOutSeen = ref(localStorage.getItem('filterOutSeen') || false)
@@ -40,15 +39,6 @@ function toggleFilterOutSeen() {
   }
   window.mixpanel?.track('Check seenFilter', { filterOutSeen: filterOutSeen.value })
 }
-
-navigator.serviceWorker.addEventListener('message', (event) => {
-  if (event.data.action === 'getReminderDate') {
-    const nextShow = futureShows.value[0];
-    const reminderDate = nextShow?.nextepisode?.date;
-    console.log('reminderDate', reminderDate);
-    event.source.postMessage({ action: 'reminderDate', date: reminderDate, show: nextShow?.name });
-  }
-});
 </script>
 <template>
   <main v-if="shows.length" class="container">
@@ -114,7 +104,6 @@ navigator.serviceWorker.addEventListener('message', (event) => {
         <div v-if="showPopular" class="row">
           <PopularShows />
         </div>
-        <Settings />
 
       </div>
     </div>

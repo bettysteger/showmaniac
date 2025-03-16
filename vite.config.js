@@ -36,10 +36,9 @@ export default defineConfig({
                 maxAgeSeconds: 24 * 60 * 60,
               },
             },
-          }
+          },
         ],
         navigateFallback: '/index.html',
-        importScripts: ['/src/service-worker.js'],
       },
       devOptions: {
         enabled: true,
