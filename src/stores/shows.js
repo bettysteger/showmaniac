@@ -125,10 +125,11 @@ export const useShowsStore = defineStore('shows', () => {
 
     let data = await fetch(apiUrl + show.id + '?embed[]=previousepisode&embed[]=nextepisode')
     data = await data.json()
-    Object.assign(show, data) // to not overwrite 'seen' or 'lastSeen'
 
     let beforeTba = show.latestepisode?.date === 'tba';
-    updateEpisodeDates(show);
+    updateEpisodeDates(data);
+    Object.assign(show, data) // to not overwrite 'seen' or 'lastSeen'
+
     if(show.lastSeen || beforeTba) {
       show.seen = show.latestepisode.number === show.lastSeen;
     }
