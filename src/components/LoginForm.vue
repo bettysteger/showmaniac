@@ -11,6 +11,10 @@ const props = defineProps({
   onLogin: {
     type: Function,
     required: true
+  },
+  onSignup: {
+    type: Function,
+    required: true
   }
 })
 
@@ -44,7 +48,11 @@ async function handleSubmit() {
   }
 
   try {
-    await props.onLogin(email.value, password.value)
+    if (isSignup.value) {
+      await props.onSignup(email.value, password.value)
+    } else {
+      await props.onLogin(email.value, password.value)
+    }
     emit('close')
   } catch (err) {
     error.value = getErrorMessage(err)

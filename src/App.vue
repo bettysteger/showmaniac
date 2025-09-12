@@ -27,12 +27,15 @@ const showEmailForm = ref(false)
 const isNavCollapsed = ref(true)
 
 // Auth methods
-const handleAuth = async (email, password) => {
+const login = async (email, password) => {
   if (showLoginForm.value && !showEmailForm.value) {
     await signInWithEmailAndPassword(auth, email, password)
-  } else {
-    await createUserWithEmailAndPassword(auth, email, password)
   }
+  showLoginForm.value = false
+}
+
+const signup = async (email, password) => {
+  await createUserWithEmailAndPassword(auth, email, password)
   showLoginForm.value = false
 }
 
@@ -110,7 +113,7 @@ onMounted(() => {
 
   <RouterView />
 
-  <LoginForm v-if="showLoginForm" :onLogin="handleAuth" @close="showLoginForm = false" />
+  <LoginForm v-if="showLoginForm" :onLogin="login" :onSignup="signup" @close="showLoginForm = false" />
 
   <p>&nbsp;</p>
 
