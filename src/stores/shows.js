@@ -9,7 +9,6 @@ const apiUrl = 'https://api.tvmaze.com/shows/';
 export const useShowsStore = defineStore('shows', () => {
   const shows = ref(JSON.parse(localStorage.getItem('showmaniac')) || []);
   const originalTitle = document.title
-  const loadedCount = ref(0);
   const { startLoading, stopLoading } = useLoading();
   let dbUnsubscribe = null;
   let isInitialSync = true;
@@ -65,19 +64,20 @@ export const useShowsStore = defineStore('shows', () => {
   /**
    * Extends show objects with API info (nextepisode, previousepisode, etc.)
    */
-  function updateShows() {
-    loadedCount.value = 0;
+  async function updateShows() {
     if (shows.value.length > 0) {
       startLoading();
     }
-    shows.value.forEach(async (show) => {
-      await update(show)
-      loadedCount.value++;
-      if(loadedCount.value === shows.value.length) {
-        updateStorage();
-        stopLoading();
-      }
-    });
+
+    // Run updates in parallel for better performance
+    await Promise.all(
+      shows.value.map(async (show) => {
+        await update(show);
+      })
+    );
+
+    updateStorage();
+    stopLoading();
   }
   updateShows();
 
