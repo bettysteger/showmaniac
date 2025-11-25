@@ -32,11 +32,11 @@ export const useShowsStore = defineStore('shows', () => {
         const data = snapshot.val();
         if (data && !isSyncing) {
           isSyncing = true;
-          startLoading();
           shows.value = data;
           localStorage.setItem('showmaniac', JSON.stringify(shows.value));
           isSyncing = false;
-          stopLoading();
+          // After loading Firebase data, update shows with fresh API data
+          updateShows();
         }
         isInitialSync = false;
       });
@@ -137,7 +137,7 @@ export const useShowsStore = defineStore('shows', () => {
   }
 
   async function update(show) {
-    if(show.nextepisode) {
+    if(show.nextepisode && show.latestepisode?.date) {
       let nextDate = new Date(show.nextepisode.date);
       let inFuture = nextDate.getTime() === nextDate.getTime() && nextDate > new Date();
       // Don't load if show has ended or nextepisode date is in the future
