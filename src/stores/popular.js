@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { useShowsStore } from './shows'
 
 const headers = {
-  'trakt-api-key': 'fa77a129a9f09b971f1be09c64b38c67c73e200d97d4248efb496b3f67e891d1',
+  'trakt-api-key': import.meta.env.VITE_TRAKT_API_KEY,
   'trakt-api-version': 2
 };
 
