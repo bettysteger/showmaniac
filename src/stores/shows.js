@@ -5,6 +5,7 @@ import { ref as dbRef, set, onValue } from 'firebase/database'
 import { useLoading } from '../composables/useLoading'
 
 const apiUrl = 'https://api.tvmaze.com/shows/';
+const tmdbApiKey = import.meta.env.VITE_TMDB_API_KEY;
 
 export const useShowsStore = defineStore('shows', () => {
   const shows = ref(JSON.parse(localStorage.getItem('showmaniac')) || []);
@@ -133,11 +134,42 @@ export const useShowsStore = defineStore('shows', () => {
     if(show.lastSeen || beforeTba) {
       show.seen = show.latestepisode.number === show.lastSeen;
     }
+    await resolveTmdbId(show);
     show.loading = false;
   }
 
+  /**
+   * Looks up the TMDB ID (needed for streaming links) via the IMDb/TVDB IDs from TVmaze.
+   * Runs once per show: the result is stored on the show (0 = no match) and persisted.
+   */
+  async function resolveTmdbId(show) {
+    if (show.tmdb !== undefined || !tmdbApiKey) { return; }
+
+    const lookups = [['imdb_id', show.imdb], ['tvdb_id', show.thetvdb]].filter(([, id]) => id);
+    let failed = false;
+
+    for (const [source, id] of lookups) {
+      try {
+        const response = await fetch(`https://api.themoviedb.org/3/find/${id}?external_source=${source}&api_key=${tmdbApiKey}`);
+        const json = await response.json();
+        const match = json.tv_results?.[0];
+        if (match) {
+          show.tmdb = match.id;
+          return;
+        }
+      } catch {
+        failed = true;
+      }
+    }
+
+    // Only remember "no match" if every lookup actually answered; retry next time on network errors
+    if (!failed) { show.tmdb = 0; }
+  }
+
   async function update(show) {
-    if(show.nextepisode && show.latestepisode?.date) {
+    const needsTmdbId = tmdbApiKey && show.tmdb === undefined;
+
+    if(!needsTmdbId && show.nextepisode && show.latestepisode?.date) {
       let nextDate = new Date(show.nextepisode.date);
       let inFuture = nextDate.getTime() === nextDate.getTime() && nextDate > new Date();
       // Don't load if show has ended or nextepisode date is in the future
@@ -172,6 +204,9 @@ export const useShowsStore = defineStore('shows', () => {
 function updateEpisodeDates(show) {
   const latest = show.latestepisode = show._embedded?.previousepisode || {};
   const next = show.nextepisode = show._embedded?.nextepisode || {};
+  // keep external IDs (used to resolve the TMDB ID), drop the rest to keep storage small
+  show.imdb = show.externals?.imdb || undefined;
+  show.thetvdb = show.externals?.thetvdb || undefined;
   ['_embedded', '_links', 'externals'].forEach((key) => delete show[key]);
 
   next.date = show.status === 'Ended' ? 'ENDED' : parseDateTime(next);

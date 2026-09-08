@@ -7,7 +7,7 @@
         <b>
           <a v-tooltip="'search this episode'" :href="`http://google.com/search?q=${parsedName} ${show.latestepisode?.number}`" target="_blank" rel="noopener">{{ show.latestepisode?.number }}</a>
         </b>
-        <a v-if="isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchseriesUrl" target="_blank" rel="noopener"><i class="fa fa-fw fa-play-circle-o"></i></a>
+        <a v-if="watchUrl && isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchUrl" target="_blank" rel="noopener"><i class="fa fa-fw fa-play-circle-o"></i></a>
         <!-- <a ng-href="{{_.availability[show.id].amazon}}" target="_blank" ng-class="{freeForPrime:_.availability[show.id].freeForPrime, invisible:!_.availability[show.id].amazon}" v-tooltip="'watch via Amazon'" ><i class="fa fa-fw fa-amazon"></i></a> -->
         &nbsp;
         <small v-if="show.lastSeen && !show.seen">
@@ -50,18 +50,21 @@ const parsedName = computed(() => {
 })
 
 /**
- * Generates watchseries Link
+ * Generates 1shows streaming link. Requires the TMDB ID (show.tmdb), which the
+ * shows store resolves from the IMDb/TVDB IDs of the TVmaze API. The slug is ignored by 1shows.
  * @example
- *   https://www.watchseries1.fun/tv-series/big-little-lies-season-2-episode-1
- * @return {String}      link to watchseries-online
+ *   https://www.1shows.org/tv/66292-big-little-lies?season=2&episode=1&streaming=true
+ * @return {String|undefined}      link to 1shows, undefined if no TMDB ID is known
  */
-const watchseriesUrl = computed(() => {
+const watchUrl = computed(() => {
+  if (!show.value.tmdb) { return; }
+
   let episodeNo = nextEpisodeNo();
   let series = show.value.name.replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
   let season = parseInt(episodeNo.split('x')[0]);
   let episode = parseInt(episodeNo.split('x')[1]);
 
-  return `https://www.watchseries1.fun/tv-series/${series}-season-${season}-episode-${episode}`
+  return `https://www.1shows.org/tv/${show.value.tmdb}-${series}?season=${season}&episode=${episode}&streaming=true`
 })
 
 function nextEpisodeNo() {
