@@ -15,7 +15,7 @@
  *   GET /ts?url=<segment>&init=<init segment>[&referer=<address>]
  * Without ffmpeg (FFMPEG=path to use another one) the segments are passed on unchanged.
  * A segment is only sent when it is downloaded and repackaged completely, so the next segments
- * (PREFETCH, default 5, like the 30 seconds hls.js keeps) are prepared meanwhile: otherwise the TV
+ * (PREFETCH, default 20, about 2 minutes) are prepared meanwhile: otherwise the TV
  * waits for every segment. They are downloaded in order, at most MAX_DOWNLOADS (default 2) at
  * once; the segment the TV waits for starts at once: measured with a streaming server, 6 downloads at once
  * delivered almost nothing for 20 seconds and the next segment came fifth.
@@ -33,8 +33,8 @@ const PASS_ON = ['content-type', 'content-length', 'content-range', 'accept-rang
 const FFMPEG = process.env.FFMPEG || 'ffmpeg'
 const canRepackage = spawnSync(FFMPEG, ['-version'], { stdio: 'ignore' }).status === 0
 const INIT_CACHE_SIZE = 20
-const PREFETCH = process.env.PREFETCH === undefined ? 5 : Number(process.env.PREFETCH)
-const TS_CACHE_SIZE = PREFETCH + 5 // about 6 MB each
+const PREFETCH = process.env.PREFETCH === undefined ? 20 : Number(process.env.PREFETCH)
+const TS_CACHE_SIZE = PREFETCH + 5 // about 6 MB each, 150 MB with 20
 const REPORT_EVERY = 10 // seconds
 const MAX_DOWNLOADS = Number(process.env.MAX_DOWNLOADS) || 2
 
@@ -75,17 +75,24 @@ function rewriteToTs(playlist, base, referer) {
   const init = new URL(map[1], base).href
   const suffix = '&init=' + encodeURIComponent(init) + (referer ? '&referer=' + encodeURIComponent(referer) : '')
   const list = []
+  let duration = 0
 
   const rewritten = playlist.split('\n').filter((line) => !line.startsWith('#EXT-X-MAP')).map((line) => {
     const text = line.trim()
+    const extinf = text.match(/^#EXTINF:([\d.]+)/)
+    if (extinf) { duration = Number(extinf[1]) }
     if (!text || text[0] === '#') { return line }
     const url = new URL(text, base).href
     list.push(url)
+    durations.set(url, duration)
     return '/ts?url=' + encodeURIComponent(url) + suffix
   }).join('\n')
 
   // remembered to know which segments come next
-  if (following.size > 20000) { following.clear() }
+  if (following.size > 20000) {
+    following.clear()
+    durations.clear()
+  }
   list.forEach((url, index) => following.set(url, list.slice(index + 1, index + 1 + PREFETCH)))
   return rewritten
 }
@@ -149,7 +156,7 @@ let received = 0 // bytes since the last report
 
 setInterval(() => {
   if (!active.size && !received) { return }
-  console.log(`  total ${(received / 1e6 / REPORT_EVERY).toFixed(2)} MB/s in the last ${REPORT_EVERY} s, ${active.size} downloads running`)
+  console.log(`  total ${(received / 1e6 / REPORT_EVERY).toFixed(2)} MB/s in the last ${REPORT_EVERY} s, ${active.size} downloads running, ${readyAhead()}`)
   received = 0
 }, REPORT_EVERY * 1000).unref()
 
@@ -241,6 +248,24 @@ function cached(map, max, key, create) {
 const inits = new Map()
 const segments = new Map()  // segment address: repackaged segment
 const following = new Map() // segment address: addresses of the next segments
+const durations = new Map() // segment address: seconds of video
+const done = new Set()      // repackaged segments that are ready to send
+let lastAsked = null        // the segment the TV asked for last
+
+/*
+ * How much video is ready after the segment the TV asked for last: if it shrinks while the TV plays,
+ * the server delivers slower than the video plays. AVPlay keeps a little more in its own buffer.
+ */
+function readyAhead() {
+  let secs = 0
+  let count = 0
+  for (const url of following.get(lastAsked) || []) {
+    if (!done.has(url) || !segments.has(url)) { break }
+    secs += durations.get(url) || 0
+    count++
+  }
+  return `ready ahead of the TV: ${Math.round(secs)} s (${count} segments)`
+}
 
 function initSegment(url, headers) {
   return cached(inits, INIT_CACHE_SIZE, url, () => download(url, headers, true))
@@ -252,6 +277,8 @@ function repackaged(url, init, headers, urgent) {
     const start = Date.now()
     const data = await toTs(Buffer.concat([head, body]))
     console.log(`    repackaged in ${seconds(start)}`)
+    if (done.size > 1000) { done.clear() }
+    done.add(url)
     return data
   })
 }
@@ -278,8 +305,11 @@ async function ts(request, response, params) {
   if (!url || !init) { return response.writeHead(400).end('url and init are needed') }
   const headers = headersFor(params.get('referer') || '')
 
+  const wasReady = done.has(url) && segments.has(url)
+  lastAsked = url
   hurry(url)
   const data = repackaged(url, init, headers, true)
+  console.log(`TV asks for ${url.split('/').pop()}: ${wasReady ? 'ready' : 'the TV waits'}, ${readyAhead()}`)
   // the next segments are prepared while the TV plays this one
   ;(following.get(url) || []).forEach((next) => {
     repackaged(next, init, headers).catch(() => { /* tried again when the TV asks for it */ })

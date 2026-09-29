@@ -1,5 +1,5 @@
 name: showmaniac stream proxy
-version: "1.0.6"
+version: "1.0.7"
 slug: showmaniac_proxy
 description: Loads video streams for the showmaniac TV app, the TV gets them from the IP address of Home Assistant
 url: https://showmaniac.com

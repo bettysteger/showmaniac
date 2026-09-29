@@ -645,6 +645,14 @@ html.native-video #backdrop {
   display: none;
 }
 
+/*
+ * The <object> of AVPlay is only needed to exist, the video is drawn in the display area of AVPlay.
+ * Visible, the TV showed a half transparent grey circle in its middle over the video.
+ */
+.player-native {
+  visibility: hidden;
+}
+
 .player-cursor {
   position: absolute;
   left: 0;
