@@ -177,11 +177,17 @@ HLS streams in fMP4 (`#EXT-X-MAP`, segments like `.m4s`) are repackaged to MPEG-
 | each fMP4 above, repackaged to MPEG-TS by the proxy | plays, seeking works |
 
 A repackaged segment can only be sent when it is downloaded completely, so the proxy prepares
-the next 3 segments (`PREFETCH`) while the TV plays one. Without that the TV waits for every
+the next 5 segments (`PREFETCH`, about 30 seconds like hls.js in a browser) while the TV plays one.
+They are downloaded in order, at most 2 at once (`MAX_DOWNLOADS`); the segment the TV waits for
+starts at once. With a real streaming server 6 downloads at once delivered almost nothing for
+20 seconds, and the segment the TV needed next came fifth. Without that the TV waits for every
 segment when the server is not much faster than the video. Test on the QN85B with a server that
 delivers 0.8 MB/s per connection (a segment takes 5.9 s to load and plays 6 s): without
 prefetching the video started after 14 s and fell behind, with it after 8 s and without stalls.
-The log shows how long every download and repackaging took.
+The log shows how long every download and repackaging took, how long the server took to answer,
+how fast it sent and how many downloads ran at once, and every 10 seconds the speed of all downloads together: if the total does not grow with
+more downloads at once, the server or the network is the limit and more prefetching does not
+help. A 1080p stream with 5 MB per 6 seconds needs about 0.8 MB/s.
 
 Without ffmpeg (`FFMPEG=<path>` to use another one) fMP4 is passed on unchanged. Playlists with
 byte ranges are not repackaged. The Home Assistant add-on contains ffmpeg.

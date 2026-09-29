@@ -15,7 +15,10 @@
  *   GET /ts?url=<segment>&init=<init segment>[&referer=<address>]
  * Without ffmpeg (FFMPEG=path to use another one) the segments are passed on unchanged.
  * A segment is only sent when it is downloaded and repackaged completely, so the next segments
- * (PREFETCH, default 3) are prepared meanwhile: otherwise the TV waits for every segment.
+ * (PREFETCH, default 5, like the 30 seconds hls.js keeps) are prepared meanwhile: otherwise the TV
+ * waits for every segment. They are downloaded in order, at most MAX_DOWNLOADS (default 2) at
+ * once; the segment the TV waits for starts at once: measured with a streaming server, 6 downloads at once
+ * delivered almost nothing for 20 seconds and the next segment came fifth.
  *
  * Everyone in the home network can use it, do not make the port reachable from the internet.
  */
@@ -30,8 +33,10 @@ const PASS_ON = ['content-type', 'content-length', 'content-range', 'accept-rang
 const FFMPEG = process.env.FFMPEG || 'ffmpeg'
 const canRepackage = spawnSync(FFMPEG, ['-version'], { stdio: 'ignore' }).status === 0
 const INIT_CACHE_SIZE = 20
-const PREFETCH = process.env.PREFETCH === undefined ? 3 : Number(process.env.PREFETCH)
+const PREFETCH = process.env.PREFETCH === undefined ? 5 : Number(process.env.PREFETCH)
 const TS_CACHE_SIZE = PREFETCH + 5 // about 6 MB each
+const REPORT_EVERY = 10 // seconds
+const MAX_DOWNLOADS = Number(process.env.MAX_DOWNLOADS) || 2
 
 function headersFor(referer) {
   const headers = { 'user-agent': USER_AGENT }
@@ -135,13 +140,84 @@ async function stream(request, response, params) {
   Readable.fromWeb(upstream.body).on('error', () => response.destroy()).pipe(response)
 }
 
-async function download(url, headers) {
+/*
+ * Speed of the downloads of segments: each one and all together. If the total does not grow with
+ * more downloads at the same time, the server (or the network) is the limit, not a single connection.
+ */
+const active = new Set() // running downloads, each knows how many ran at once at most
+let received = 0 // bytes since the last report
+
+setInterval(() => {
+  if (!active.size && !received) { return }
+  console.log(`  total ${(received / 1e6 / REPORT_EVERY).toFixed(2)} MB/s in the last ${REPORT_EVERY} s, ${active.size} downloads running`)
+  received = 0
+}, REPORT_EVERY * 1000).unref()
+
+/*
+ * Prefetched segments wait for a free slot, in order. The segment the TV waits for starts at once.
+ */
+const waiting = [] // { url, go }
+let downloading = 0
+
+function slot(url, urgent) {
+  return new Promise((go) => {
+    if (urgent || downloading < MAX_DOWNLOADS) {
+      downloading++
+      return go()
+    }
+    waiting.push({ url, go })
+  })
+}
+
+function freeSlot() {
+  const next = waiting.shift()
+  if (next) {
+    next.go() // the slot is passed on
+  } else {
+    downloading--
+  }
+}
+
+/** The TV asks for a segment that is still waiting as a prefetch: it starts at once */
+function hurry(url) {
+  const index = waiting.findIndex((entry) => entry.url === url)
+  if (index === -1) { return }
+  downloading++
+  waiting.splice(index, 1)[0].go()
+}
+
+async function download(url, headers, urgent) {
+  await slot(url, urgent)
+  try {
+    return await load(url, headers)
+  } finally {
+    freeSlot()
+  }
+}
+
+async function load(url, headers) {
   const start = Date.now()
-  const upstream = await fetch(url, { headers, redirect: 'follow' })
-  const data = Buffer.from(await upstream.arrayBuffer())
-  log(upstream.status, upstream.headers.get('content-type'), data.length, url, 'download ' + seconds(start))
-  if (!upstream.ok) { throw new Error(`${upstream.status} from ${url}`) }
-  return data
+  const self = { atOnce: 0 }
+  active.add(self)
+  active.forEach((other) => { other.atOnce = Math.max(other.atOnce, active.size) })
+  try {
+    const upstream = await fetch(url, { headers, redirect: 'follow' })
+    const waited = (Date.now() - start) / 1000 // until the server answered
+    const chunks = []
+    for await (const chunk of upstream.body || []) {
+      chunks.push(chunk)
+      received += chunk.length
+    }
+    const data = Buffer.concat(chunks)
+    const took = (Date.now() - start) / 1000
+    const speed = data.length / 1e6 / Math.max(took - waited, 0.05)
+    log(upstream.status, upstream.headers.get('content-type'), data.length, url,
+      `download ${took.toFixed(1)} s: server answered after ${waited.toFixed(1)} s, then ${speed.toFixed(2)} MB/s, up to ${self.atOnce} at once`)
+    if (!upstream.ok) { throw new Error(`${upstream.status} from ${url}`) }
+    return data
+  } finally {
+    active.delete(self)
+  }
 }
 
 /** Keeps the last results of a function, a failed one is tried again next time */
@@ -167,12 +243,12 @@ const segments = new Map()  // segment address: repackaged segment
 const following = new Map() // segment address: addresses of the next segments
 
 function initSegment(url, headers) {
-  return cached(inits, INIT_CACHE_SIZE, url, () => download(url, headers))
+  return cached(inits, INIT_CACHE_SIZE, url, () => download(url, headers, true))
 }
 
-function repackaged(url, init, headers) {
+function repackaged(url, init, headers, urgent) {
   return cached(segments, TS_CACHE_SIZE, url, async () => {
-    const [head, body] = await Promise.all([initSegment(init, headers), download(url, headers)])
+    const [head, body] = await Promise.all([initSegment(init, headers), download(url, headers, urgent)])
     const start = Date.now()
     const data = await toTs(Buffer.concat([head, body]))
     console.log(`    repackaged in ${seconds(start)}`)
@@ -202,7 +278,8 @@ async function ts(request, response, params) {
   if (!url || !init) { return response.writeHead(400).end('url and init are needed') }
   const headers = headersFor(params.get('referer') || '')
 
-  const data = repackaged(url, init, headers)
+  hurry(url)
+  const data = repackaged(url, init, headers, true)
   // the next segments are prepared while the TV plays this one
   ;(following.get(url) || []).forEach((next) => {
     repackaged(next, init, headers).catch(() => { /* tried again when the TV asks for it */ })
