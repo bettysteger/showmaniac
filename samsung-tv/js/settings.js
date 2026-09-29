@@ -27,6 +27,45 @@
     // the player clicks into the middle of the page if the video does not start by itself
     playerAutoClick: true,
 
+    /**
+     * Official streaming services, the detail screen shows a button for each one that has the show.
+     * providers: names in the TMDB provider list of the country, e.g. "Joyn" also matches "Joyn Plus"
+     * url: link for the show, {slug} is the name like "germanys-next-topmodel", {name} the plain name
+     * verify: the url is the page of the show, the button only appears if it exists;
+     *         searchUrl is used if TMDB lists the show but the page was not found
+     * appId: the app of the service on the TV, it gets the link. Without the app the link is
+     *        opened in the browser of the TV.
+     */
+    country: 'AT',
+    services: [{
+      name: 'Joyn',
+      providers: ['Joyn'],
+      url: 'https://www.joyn.at/serien/{slug}',
+      verify: true,
+      searchUrl: 'https://www.joyn.at/suche?q={name}',
+      appId: '2200MKoe7n.ZAPPNVOLLTVFREIGESTREAMT'
+    }, {
+      name: 'RTL+',
+      providers: ['RTL+'],
+      url: 'https://plus.rtl.de/suche?q={name}',
+      appId: 'KbRHmu0vrC.TVNOWPREMIUM'
+    }, {
+      name: 'Netflix',
+      providers: ['Netflix'],
+      url: 'https://www.netflix.com/search?q={name}',
+      appId: 'org.tizen.netflix-app'
+    }, {
+      name: 'Prime Video',
+      providers: ['Amazon Prime Video'],
+      url: 'https://www.primevideo.com/search?phrase={name}',
+      appId: 'org.tizen.primevideo'
+    }, {
+      name: 'Disney+',
+      providers: ['Disney Plus'],
+      url: 'https://www.disneyplus.com/search?q={name}',
+      appId: 'MCmYXNxgcu.DisneyPlus'
+    }],
+
     // Samsung Internet on Tizen TVs, null lets the TV pick an app for the link
     browserAppIds: ['org.tizen.browser', null],
 

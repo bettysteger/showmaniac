@@ -62,15 +62,32 @@
     return !!(player.playerUrlFor(show, '01x01') || player.urlFor(show, '01x01'));
   };
 
-  function launch(url) {
+  /** @return {Boolean} true if the app is installed on the TV */
+  function isInstalled(appId) {
+    try {
+      return !!window.tizen.application.getAppInfo(appId);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Opens a link in an app of the TV, the first app that is installed and accepts it wins.
+   * @param {Array} appIds defaults to the browser of the TV
+   */
+  function launch(url, appIds) {
     return new Promise(function (resolve, reject) {
       if (!window.tizen || !window.tizen.application) {
         // development in a desktop browser
         return window.open(url, '_blank') ? resolve() : reject(new Error('Popup blocked'));
       }
 
-      var control = new window.tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', url);
-      var appIds = SM.settings.browserAppIds.slice();
+      // PAYLOAD is how many Samsung TV apps receive deep links
+      var control = new window.tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', url, null, null,
+        [new window.tizen.ApplicationControlData('PAYLOAD', [JSON.stringify({ values: url })])]);
+      appIds = (appIds || SM.settings.browserAppIds).filter(function (appId) {
+        return appId === null || isInstalled(appId);
+      });
 
       (function tryNext() {
         if (!appIds.length) { return reject(new Error('No browser found')); }
@@ -132,6 +149,23 @@
       return;
     }
     player.askIfSeen();
+  };
+
+  /**
+   * Opens an official streaming service: its app on the TV, otherwise its page in the browser.
+   * The next episode is remembered, so the app can ask if it was watched.
+   */
+  player.openService = function (show, episodeNo, service) {
+    var url = service.url;
+    if (episodeNo) { remember(show, episodeNo); }
+
+    // the app of the service, the browser of the TV as fallback
+    var appIds = (service.appId ? [service.appId] : []).concat(SM.settings.browserAppIds);
+
+    launch(url, appIds).catch(function () {
+      SM.storage.remove(PENDING_KEY);
+      SM.ui.toast('Could not open ' + url);
+    });
   };
 
   /** Plays the next episode to watch of a show, loads the episode list first */

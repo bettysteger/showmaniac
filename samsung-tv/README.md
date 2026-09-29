@@ -66,6 +66,21 @@ samsung-tv/tools/install.sh <ip of the tv> [certificate profile]
 The certificate profile defaults to `Showmaniac`. If the transfer fails, run it again:
 the TV only accepts one connection and sometimes drops it.
 
+## Official streaming services
+
+The detail screen shows a button for official services that have the show: Joyn, RTL+,
+Netflix, Prime Video and Disney+ (`services` in `js/settings.js`). The button opens the app of the service on the TV,
+without the app the link is opened in the browser of the TV. The episode is chosen there and
+the service plays it with your account.
+
+* Which service has a show comes from TMDB (watch providers of `country`, data by JustWatch)
+* Joyn: the link goes to the page of the show, e.g. `https://www.joyn.at/serien/villa-der-versuchung`,
+  built from the name. If it does not exist but TMDB lists Joyn, the Joyn search is opened
+* RTL+, Netflix, Prime Video and Disney+: the addresses of shows contain IDs that are not known,
+  the link is a search for the name. Whether the apps use it or only open their start page
+  depends on the app. The RTL+ app ignores links and always shows its start page (tested)
+* Results are cached on the TV for 7 days
+
 ## Player inside the app
 
 With a player address the episode is shown in the player of the app instead of the browser:

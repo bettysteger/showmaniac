@@ -20,6 +20,7 @@
     var id = params.show.id;
     var show = SM.store.get(id) || params.show;
     var episodes = null; // null while loading
+    var services = []; // official streaming services with a page for the show
     var failed = false;
     var season = null;
 
@@ -95,6 +96,11 @@
       if (SM.player.canPlay(show) && hasAired) {
         actions.appendChild(button('action:play', 'play', next ? 'Play ' + next : 'Play', play));
       }
+      services.forEach(function (service) {
+        actions.appendChild(button('action:service:' + service.name, 'play', service.name, function () {
+          SM.player.openService(show, hasAired ? next : null, service);
+        }));
+      });
       if (tracked && hasAired && !show.seen && episodes && next && next !== latest) {
         actions.appendChild(button('action:catchup', 'up', 'Mark ' + next + ' as seen', function () {
           SM.store.markSeen(show, next);
@@ -247,6 +253,14 @@
       });
     }
 
+    function loadServices() {
+      SM.services.find(show).then(function (found) {
+        if (!document.body.contains(el)) { return; }
+        services = found;
+        SM.nav.preserve(renderActions);
+      });
+    }
+
     return {
       el: el,
       topbar: false,
@@ -256,6 +270,8 @@
         SM.ui.backdrop(show);
         loadEpisodes();
 
+        loadServices();
+
         if (!isTracked()) {
           // shows from search and popular come without episode dates and play link
           SM.store.prepare(show).then(function (prepared) {
@@ -263,6 +279,7 @@
             show = prepared;
             SM.nav.preserve(render);
             SM.ui.backdrop(show);
+            loadServices(); // the TMDB ID is known now
           }, function () { /* keep what we have */ });
         }
       },
