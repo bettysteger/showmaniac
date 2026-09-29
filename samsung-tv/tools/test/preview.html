@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--
+  Test page for the player of the app: a short muted preview loops first in a web component with
+  preview images. The episode (a long video) appears after 3 seconds and only starts with a click
+  on its play button.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>player test: preview before the episode</title>
+  <style>
+    body { margin: 0; font: 20px sans-serif; background: #ddd; }
+    preview-row { display: block; height: 300px; }
+    .episode { position: relative; width: 480px; height: 270px; margin: 20px 60px; }
+    .episode video { width: 100%; height: 100%; background: #000; }
+    .episode button { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 30px; }
+  </style>
+</head>
+<body>
+  <preview-row></preview-row>
+  <div class="episode" id="slot"></div>
+  <script>
+    customElements.define('preview-row', class extends HTMLElement {
+      connectedCallback() {
+        var root = this.attachShadow({ mode: 'open' });
+        root.innerHTML = '<style>div{display:inline-block;width:260px;height:150px;margin:10px;background:#c84}' +
+          'video{width:400px;height:225px;background:#000}</style>' +
+          '<div>Vorschau 1</div><div>Vorschau 2</div>' +
+          '<video src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" muted loop autoplay></video>';
+      }
+    });
+    setTimeout(function () {
+      document.getElementById('slot').innerHTML =
+        '<video id="episode" src="https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4" preload="metadata"></video>' +
+        '<button id="play">Play</button>';
+      setup();
+    }, 3000);
+
+    function setup() {
+    var episode = document.getElementById('episode');
+    var allowed = false;
+    var play = episode.play.bind(episode);
+    episode.play = function () { return allowed ? play() : Promise.reject(new Error('click first')); };
+    document.getElementById('play').addEventListener('click', function () { allowed = true; this.remove(); play(); });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!--
+  Test page for the player of the app: the video is part of the page itself (no frame), sits in a
+  small transformed box and is covered by preview images until it is started.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>player test: video in the page</title>
+  <style>
+    body { margin: 0; font: 20px sans-serif; background: #ddd; }
+    .episodes { display: flex; flex-wrap: wrap; padding: 20px; }
+    .episodes div { width: 300px; height: 170px; margin: 10px; background: #579; color: #fff; }
+    .stage { position: relative; width: 480px; height: 270px; margin: 20px auto; transform: scale(0.9); }
+    video { width: 100%; height: 100%; background: #000; }
+    .cover { position: absolute; left: -600px; top: -500px; width: 1700px; height: 1300px; background: rgba(40, 60, 90, 0.97); color: #fff; font-size: 40px; text-align: center; padding-top: 500px; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <div class="episodes"><div>Episode 1</div><div>Episode 2</div><div>Episode 3</div><div>Episode 4</div></div>
+  <div class="stage">
+    <video id="video" src="https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4" preload="none"></video>
+    <div class="cover" id="cover">preview images, click to play</div>
+  </div>
+  <script>
+    // the preview stays on top of the video, like on the reported page
+    document.getElementById('cover').addEventListener('click', function () {
+      document.getElementById('video').play();
+    });
+  </script>
+</body>
+</html>

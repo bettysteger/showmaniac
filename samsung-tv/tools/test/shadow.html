@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!--
+  Test page for the player of the app: the video is inside the shadow root of a web component,
+  the play button of the component is not in the middle, preview images cover the page.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>player test: video in a web component</title>
+  <style>
+    body { margin: 0; font: 20px sans-serif; background: #ddd; }
+    .episodes { display: flex; flex-wrap: wrap; padding: 20px; }
+    .episodes div { width: 300px; height: 170px; margin: 10px; background: #579; color: #fff; }
+    test-player { display: block; width: 480px; height: 270px; margin: 20px 60px; }
+  </style>
+</head>
+<body>
+  <div class="episodes"><div>Episode 1</div><div>Episode 2</div><div>Episode 3</div><div>Episode 4</div><div>Episode 5</div><div>Episode 6</div></div>
+  <test-player></test-player>
+  <script>
+    customElements.define('test-player', class extends HTMLElement {
+      connectedCallback() {
+        var root = this.attachShadow({ mode: 'open' });
+        root.innerHTML = '<style>:host{position:relative} video{width:100%;height:100%;background:#000} ' +
+          'button{position:absolute;left:10px;bottom:10px;font-size:24px}</style>' +
+          '<video src="https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4" preload="none"></video>' +
+          '<button>Play</button>';
+        var video = root.querySelector('video');
+        // the video only plays after the play button of the page was clicked
+        var allowed = false;
+        var play = video.play.bind(video);
+        video.play = function () { return allowed ? play() : Promise.reject(new Error('click first')); };
+        root.querySelector('button').addEventListener('click', function () { allowed = true; play(); });
+      }
+    });
+  </script>
+</body>
+</html>

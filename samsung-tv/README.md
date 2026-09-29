@@ -104,19 +104,27 @@ The address has to be a page with a video player that allows to be embedded.
 | Rewind, fast forward | 1 minute back, forward | |
 | Back | close the player | hide the cursor |
 
-* The video is searched in the page and all pages embedded in it, pages with the video are
-  enlarged to fullscreen, popups are blocked
-* If the video does not start by itself the player clicks into the middle of the page
-  (`playerAutoClick`)
-* If no video is found after 12 seconds the cursor appears
+* The video is searched in the page and all pages embedded in it. Once it plays it is put in
+  front of everything in fullscreen, the rest of the page is hidden (also preview images that
+  cover the video). While the cursor is shown the whole page is visible again. Popups are blocked
+* Videos are also found inside web components (shadow DOM)
+* Short or muted looping videos count as previews: the longest playing video is shown. Once
+  the episode plays it is kept, when another video is chosen the old one is released again
+* If the video does not start by itself the player clicks into the middle of the video, or of
+  the page while no video was found (`playerAutoClick`)
+* If the video did not start after 12 seconds the cursor appears. When the video starts
+  (e.g. after a click with the cursor) the player switches back to fullscreen
 * An episode that was watched to 90% is marked as seen, otherwise the app asks
 
 Tested on a Samsung QN85B (2022, Tizen 6.5) with a test page: streams (HLS) play in 1080p.
 Addresses of video files or streams (`.mp4`, `.m3u8`) instead of a page do not work on that TV:
 its video player can not look up host names when it is used by the app.
 
-Test page for development: set `SM.settings.playerUrl = '/tools/test/player.html'` in the
-console of the browser.
+Test pages for development: set `SM.settings.playerUrl = '/tools/test/player.html'` (video in
+an embedded frame) or `'/tools/test/in-page.html'` (video in the page, covered by preview images)
+, `'/tools/test/shadow.html'` (video in a web component, starts only with its play button)
+or `'/tools/test/preview.html'` (a looping preview plays first, the episode starts later)
+in the console of the browser.
 
 ## How play links work
 

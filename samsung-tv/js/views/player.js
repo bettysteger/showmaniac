@@ -21,7 +21,7 @@
 
   var MEDIA_FILE = /\.(mp4|m4v|mov|webm|m3u8|mpd)$/i;
   var SCAN_INTERVAL = 1000;
-  var NO_VIDEO_AFTER = 12000; // switch to the cursor if no video was found until then
+  var NO_VIDEO_AFTER = 12000; // switch to the cursor if the video did not start until then
   var GIVE_UP_AFTER = 25000;  // a video file that did not load until then will not load anymore
   var CLICK_AFTER = 4000;
   var MAX_DEPTH = 5;
@@ -136,6 +136,7 @@
 
     function setMode(next) {
       mode = next;
+      setIsolated(mode !== 'cursor'); // the cursor needs the whole page
       cursor.classList.toggle('hidden', mode !== 'cursor');
       render();
       showHud(mode === 'cursor' ? 0 : 4000);
@@ -158,24 +159,158 @@
       try { win.open = function () { return null; }; } catch (e) { /* ignore */ }
     }
 
-    /** Embedded pages that contain the video fill the whole screen */
-    function maximize(element) {
+    /*
+     * The video fills the whole screen: in every page from the video up to the player the element
+     * that leads to the video (the video itself, the frames around it) is fixed to the screen,
+     * everything else is hidden. Overlays like preview images can not cover the video anymore.
+     * Switched off while the cursor is shown, so the controls of the page can be used.
+     */
+    var ISOLATE_CSS =
+      'html.__sm-isolate, html.__sm-isolate body { background: #000 !important; overflow: hidden !important; }' +
+      'html.__sm-isolate body * { visibility: hidden !important; }' +
+      'html.__sm-isolate .__sm-target { visibility: visible !important; position: fixed !important;' +
+      ' left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important;' +
+      ' width: 100vw !important; height: 100vh !important; min-width: 0 !important; min-height: 0 !important;' +
+      ' max-width: none !important; max-height: none !important; margin: 0 !important; padding: 0 !important;' +
+      ' border: 0 !important; transform: none !important; opacity: 1 !important; display: block !important;' +
+      ' z-index: 2147483647 !important; background: #000 !important; object-fit: contain !important; }' +
+      // position: fixed only covers the screen if no element around it is transformed
+      'html.__sm-isolate .__sm-flat { transform: none !important; filter: none !important;' +
+      ' perspective: none !important; contain: none !important; will-change: auto !important; }';
+
+    var isolated = []; // documents that got the style
+    var marked = [];   // elements with one of the classes __sm-target, __sm-flat
+
+    function flattenAncestors(element) {
       var doc = element.ownerDocument;
       var win = doc.defaultView;
+
+      for (var parent = element.parentElement; parent && parent !== doc.documentElement; parent = parent.parentElement) {
+        var style = win.getComputedStyle(parent);
+        if (style.transform !== 'none' || style.filter !== 'none' || style.perspective !== 'none' ||
+            (style.contain && style.contain !== 'none') || /transform|filter/.test(style.willChange || '')) {
+          parent.classList.add('__sm-flat');
+          marked.push(parent);
+        }
+      }
+    }
+
+    // inside shadow roots the video is fixed to the screen as long as its host is marked
+    var SHADOW_CSS =
+      '.__sm-target.__sm-on { position: fixed !important; left: 0 !important; top: 0 !important;' +
+      ' width: 100vw !important; height: 100vh !important; max-width: none !important; max-height: none !important;' +
+      ' margin: 0 !important; transform: none !important; opacity: 1 !important; visibility: visible !important;' +
+      ' display: block !important; z-index: 2147483647 !important; background: #000 !important; object-fit: contain !important; }';
+
+    var shadowTargets = []; // elements inside shadow roots that are switched with the class __sm-on
+
+    function addStyle(root, id, css) {
+      if (root.getElementById ? root.getElementById(id) : root.querySelector('#' + id)) { return; }
+      var style = (root.ownerDocument || root).createElement('style');
+      style.id = id;
+      style.textContent = css;
+      (root.head || root.documentElement || root).appendChild(style);
+    }
+
+    function mark(element) {
+      var root = element.getRootNode ? element.getRootNode() : element.ownerDocument;
+
+      // element inside a shadow root: style it there, then continue with its host
+      if (root.host) {
+        addStyle(root, '__sm-shadow', SHADOW_CSS);
+        if (!element.classList.contains('__sm-target')) {
+          element.classList.add('__sm-target');
+          shadowTargets.push(element);
+          marked.push(element);
+        }
+        return mark(root.host);
+      }
+
+      var doc = element.ownerDocument;
+      addStyle(doc, '__sm-isolate', ISOLATE_CSS);
+      if (!element.classList.contains('__sm-target')) {
+        element.classList.add('__sm-target');
+        marked.push(element);
+        flattenAncestors(element);
+      }
+      if (isolated.indexOf(doc) === -1) { isolated.push(doc); }
+    }
+
+    /** Puts the video in front of everything, from the video up to the player of the app */
+    function maximize(element) {
       var depth = 0;
 
-      while (win && win !== window && win.frameElement && depth++ < MAX_DEPTH) {
-        var frame = win.frameElement;
-        if (frame === media) { break; }
+      try {
+        mark(element);
+        var win = element.ownerDocument.defaultView;
 
-        if (!frame.__showmaniac) {
-          frame.__showmaniac = true;
-          frame.style.cssText += ';position:fixed !important;left:0 !important;top:0 !important;' +
-            'width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;' +
-            'border:0 !important;margin:0 !important;z-index:2147483647 !important;background:#000 !important;';
+        while (win && win !== window && win.frameElement && depth++ < MAX_DEPTH) {
+          var frame = win.frameElement;
+          if (frame === media) { break; }
+          mark(frame);
+          win = frame.ownerDocument.defaultView;
         }
-        win = frame.ownerDocument.defaultView;
-      }
+      } catch (e) { /* a page on the way can not be accessed */ }
+
+      setIsolated(mode !== 'cursor');
+    }
+
+    /** Removes all marks, used when another video is shown than before */
+    function unmarkAll() {
+      setIsolated(false);
+      marked.forEach(function (element) {
+        try { element.classList.remove('__sm-target', '__sm-flat', '__sm-on'); } catch (e) { /* page is gone */ }
+      });
+      marked = [];
+      shadowTargets = [];
+      isolated = [];
+    }
+
+    function setIsolated(on) {
+      isolated.forEach(function (doc) {
+        try { doc.documentElement.classList.toggle('__sm-isolate', on); } catch (e) { /* page is gone */ }
+      });
+      shadowTargets.forEach(function (element) {
+        try { element.classList.toggle('__sm-on', on); } catch (e) { /* page is gone */ }
+      });
+    }
+
+    /** All video elements of a document, also those inside shadow roots of web components */
+    function videosIn(doc) {
+      var videos = Array.prototype.slice.call(doc.querySelectorAll('video'));
+      if (videos.length) { return videos; }
+
+      // players built as web components hide the video in a shadow root
+      (function search(root, depth) {
+        if (depth > MAX_DEPTH) { return; }
+        Array.prototype.forEach.call(root.querySelectorAll('*'), function (element) {
+          if (!element.shadowRoot) { return; }
+          videos = videos.concat(Array.prototype.slice.call(element.shadowRoot.querySelectorAll('video')));
+          search(element.shadowRoot, depth + 1);
+        });
+      })(doc, 0);
+      return videos;
+    }
+
+    /** Short clips that loop without sound are previews, not the episode */
+    function isPreview(candidate) {
+      var duration = candidate.duration;
+      return (candidate.muted && candidate.loop) || (isFinite(duration) && duration > 0 && duration < 60);
+    }
+
+    /** The episode: long and playing, it is kept even if other videos start meanwhile */
+    function isEpisode(candidate) {
+      return !!candidate && candidate.isConnected !== false && !isPreview(candidate) && candidate.duration > 60;
+    }
+
+    function score(candidate) {
+      var rect = candidate.getBoundingClientRect();
+      var value = rect.width * rect.height + 1;
+      if (candidate.duration > 60) { value *= 20; }
+      if (isPreview(candidate)) { value *= 0.01; }
+      if (!candidate.paused) { value *= 2; }
+      if (candidate.videoWidth > 0) { value *= 2; } // has a picture
+      return value;
     }
 
     function findVideo() {
@@ -185,41 +320,56 @@
       walk(media.contentWindow, 0, function (win, doc) {
         prepare(win, doc);
 
-        Array.prototype.forEach.call(doc.querySelectorAll('video'), function (candidate) {
-          var rect = candidate.getBoundingClientRect();
-          var score = rect.width * rect.height + 1;
-          if (candidate.duration > 60) { score *= 4; }
-          if (!candidate.paused) { score *= 2; }
-
-          if (score > bestScore) {
+        videosIn(doc).forEach(function (candidate) {
+          var value = score(candidate);
+          if (value > bestScore) {
             best = candidate;
-            bestScore = score;
+            bestScore = value;
           }
         });
       });
       return best;
     }
 
-    function clickAt(x, y) {
+    /**
+     * The element at a point of the screen, looks into embedded pages and shadow roots.
+     * @return {Object|null} { win, target, x, y } with the point inside of that page
+     */
+    function targetAt(x, y) {
       var win = null;
-      try { win = media.contentWindow; } catch (e) { return false; }
+      try { win = media.contentWindow; } catch (e) { return null; }
+      var root = null;
 
-      for (var depth = 0; depth <= MAX_DEPTH; depth++) {
+      for (var depth = 0; depth <= MAX_DEPTH * 2; depth++) {
         var target;
-        try { target = win.document.elementFromPoint(x, y); } catch (e) { return false; }
-        if (!target) { return false; }
+        try { target = (root || win.document).elementFromPoint(x, y); } catch (e) { return null; }
+        if (!target) { return null; }
 
         if (target.tagName === 'IFRAME' || target.tagName === 'FRAME') {
           var rect = target.getBoundingClientRect();
           x -= rect.left + target.clientLeft;
           y -= rect.top + target.clientTop;
           win = target.contentWindow;
+          root = null;
           continue;
         }
-        fire(win, target, x, y, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
-        return true;
+        if (target.shadowRoot && target.shadowRoot !== root && target.shadowRoot.elementFromPoint) {
+          var inner = target.shadowRoot.elementFromPoint(x, y);
+          if (inner && inner !== target) {
+            root = target.shadowRoot;
+            continue;
+          }
+        }
+        return { win: win, target: target, x: x, y: y };
       }
-      return false;
+      return null;
+    }
+
+    function clickAt(x, y) {
+      var hit = targetAt(x, y);
+      if (!hit) { return false; }
+      fire(hit.win, hit.target, hit.x, hit.y, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
+      return true;
     }
 
     function fire(win, target, x, y, types) {
@@ -227,26 +377,15 @@
         var Constructor = type.indexOf('pointer') === 0 ? win.PointerEvent : win.MouseEvent;
         if (!Constructor) { return; }
         try {
-          target.dispatchEvent(new Constructor(type, { bubbles: true, cancelable: true, view: win, clientX: x, clientY: y, button: 0 }));
+          target.dispatchEvent(new Constructor(type, { bubbles: true, cancelable: true, composed: true, view: win, clientX: x, clientY: y, button: 0 }));
         } catch (e) { /* ignore */ }
       });
     }
 
     // lets players show their controls when the cursor moves over them
     function hoverAt(x, y) {
-      try {
-        var win = media.contentWindow;
-        for (var depth = 0; depth <= MAX_DEPTH; depth++) {
-          var target = win.document.elementFromPoint(x, y);
-          if (!target) { return; }
-          if (target.tagName !== 'IFRAME' && target.tagName !== 'FRAME') { return fire(win, target, x, y, ['mousemove']); }
-
-          var rect = target.getBoundingClientRect();
-          x -= rect.left + target.clientLeft;
-          y -= rect.top + target.clientTop;
-          win = target.contentWindow;
-        }
-      } catch (e) { /* no access */ }
+      var hit = targetAt(x, y);
+      if (hit) { fire(hit.win, hit.target, hit.x, hit.y, ['mousemove']); }
     }
 
     // ---- playback ----
@@ -260,10 +399,27 @@
       } catch (e) { /* ignore */ }
     }
 
+    /** Clicks the middle of the video, where most players have their play button */
+    function clickVideo() {
+      if (!video) { return clickAt(WIDTH / 2, HEIGHT / 2); }
+      try {
+        var rect = video.getBoundingClientRect();
+        var x = rect.left + rect.width / 2;
+        var y = rect.top + rect.height / 2;
+        var root = video.getRootNode ? video.getRootNode() : video.ownerDocument;
+        var target = (root.elementFromPoint ? root.elementFromPoint(x, y) : null) || video;
+        fire(video.ownerDocument.defaultView, target, x, y, ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']);
+      } catch (e) { /* page is gone */ }
+    }
+
     function togglePlay() {
       if (!video) { return direct ? null : clickAt(WIDTH / 2, HEIGHT / 2); }
 
-      if (video.paused) {
+      if (video.paused && !started && !direct) {
+        // not started yet: the page may want a click on its play button first
+        play();
+        clickVideo();
+      } else if (video.paused) {
         play();
       } else {
         pausedByUser = true;
@@ -284,40 +440,57 @@
       showHud(4000);
     }
 
+    /**
+     * Until the video plays: click where the play button usually is (the middle of the video,
+     * the middle of the screen while no video was found), then show the cursor.
+     */
+    function waitForStart() {
+      var waiting = Date.now() - openedAt;
+
+      if (SM.settings.playerAutoClick && clicks < 2 && waiting > CLICK_AFTER * (clicks + 1)) {
+        clicks++;
+        clickVideo();
+      }
+      if (mode === 'video' && waiting > NO_VIDEO_AFTER) { setMode('cursor'); }
+    }
+
     function check() {
       if (closed) { return; }
 
       if (!direct) {
-        var found = findVideo();
+        // once the episode plays it is kept, before that the best video is searched every time
+        var keep = started && isEpisode(video);
+        var found = keep ? video : findVideo();
+
         if (found !== video) {
+          // another video than before: remove the marks of the old one and start over
+          unmarkAll();
           video = found;
-          if (video && mode === 'cursor' && !started) { setMode('video'); }
+          started = false;
+          if (video && mode === 'cursor') { setMode('video'); }
         }
       }
 
       if (video) {
-        if (!video.paused && video.currentTime > 0) {
+        // a preview is never shown in fullscreen, the player keeps waiting for the episode
+        if (!video.paused && video.currentTime > 0 && !isPreview(video)) {
           if (!started) {
             started = true;
+            // the video was started with the cursor: show it in fullscreen now
+            if (mode === 'cursor') { setMode('video'); }
             showHud(5000);
           }
           if (!direct) { maximize(video); }
-        } else if (!started && !pausedByUser) {
+        } else if (!started && !pausedByUser && !isPreview(video)) {
           play();
         }
+        if (!started && !direct) { waitForStart(); }
         if (isFinite(video.duration) && video.duration > 0) {
           watched = Math.max(watched, video.currentTime / video.duration);
         }
         if (video.ended) { return close(); }
       } else if (!direct) {
-        var waiting = Date.now() - openedAt;
-
-        // many players only create the video after a click on their preview image
-        if (SM.settings.playerAutoClick && clicks < 2 && waiting > CLICK_AFTER * (clicks + 1)) {
-          clicks++;
-          clickAt(WIDTH / 2, HEIGHT / 2);
-        }
-        if (mode === 'video' && waiting > NO_VIDEO_AFTER) { setMode('cursor'); }
+        waitForStart();
       }
 
       if (direct && !started && Date.now() - openedAt > GIVE_UP_AFTER) {
