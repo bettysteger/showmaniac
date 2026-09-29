@@ -11,9 +11,21 @@
   SM.settings = {
     /**
      * Play link, keep in sync with watchUrl in src/components/ShowPast.vue
-     * @example https://www.1shows.org/tv/66292-big-little-lies?season=2&episode=1&streaming=true
+     * @example https://www.1shows.bz/tv/66292-big-little-lies?season=2&episode=1&streaming=true
      */
-    playUrl: 'https://www.1shows.org/tv/{tmdb}-{slug}?season={season}&episode={episode}&streaming=true',
+    playUrl: 'https://www.1shows.bz/tv/{tmdb}-{slug}?season={season}&episode={episode}&streaming=true',
+
+    /**
+     * Optional: address that is shown in the player of the app instead of opening the browser.
+     * Either a page with a video player that may be embedded, or a video file/stream (mp4, m3u8).
+     * Placeholders: {tmdb} {imdb} {tvdb} {slug} {season} {episode}
+     * Empty: play links are opened in the browser of the TV.
+     * To keep it out of git set TV_PLAYER_URL in .env and run tools/config.mjs.
+     */
+    playerUrl: config.playerUrl || '',
+
+    // the player clicks into the middle of the page if the video does not start by itself
+    playerAutoClick: true,
 
     // Samsung Internet on Tizen TVs, null lets the TV pick an app for the link
     browserAppIds: ['org.tizen.browser', null],

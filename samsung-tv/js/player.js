@@ -1,9 +1,9 @@
 /*
  * showmaniac TV - opens the play link of an episode on the TV.
  *
- * The link is opened in the browser of the TV: it can be controlled with the remote (cursor)
- * and plays the video in fullscreen. The streaming page does not allow to be embedded into
- * another page (X-Frame-Options), so it can not run inside of this app.
+ * With a player address in the settings (playerUrl) the episode is shown in the player of
+ * the app (views/player.js). Without, the play link is opened in the browser of the TV:
+ * the streaming page does not allow to be embedded into another page (X-Frame-Options).
  * When coming back the app asks if the episode should be marked as seen.
  */
 (function () {
@@ -15,21 +15,51 @@
 
   var player = SM.player = {};
 
+  function slug(show) {
+    return String(show.name || '').replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
+  }
+
   /**
-   * Generates the play link. Requires the TMDB ID (show.tmdb).
+   * Fills the placeholders of a link template.
+   * @return {String|null} link, null if an ID that the template needs is not known
+   */
+  function fill(template, show, episodeNo) {
+    if (!template || !show || !episodeNo) { return null; }
+
+    var episode = SM.parseEpisodeNo(episodeNo);
+    var values = {
+      tmdb: show.tmdb,
+      imdb: show.imdb,
+      tvdb: show.thetvdb,
+      slug: slug(show),
+      season: episode.season,
+      episode: episode.episode
+    };
+    var complete = true;
+
+    var url = template.replace(/\{([a-z]+)\}/g, function (placeholder, name) {
+      if (!values[name]) { complete = false; }
+      return encodeURIComponent(values[name]);
+    });
+    return complete ? url : null;
+  }
+
+  /**
+   * Generates the play link for the browser. Requires the TMDB ID (show.tmdb).
    * @return {String|null} link, null if no TMDB ID is known
    */
   player.urlFor = function (show, episodeNo) {
-    if (!show || !show.tmdb || !episodeNo) { return null; }
+    return fill(SM.settings.playUrl, show, episodeNo);
+  };
 
-    var episode = SM.parseEpisodeNo(episodeNo);
-    var slug = show.name.replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
+  /** @return {String|null} address for the player of the app, null if none is set */
+  player.playerUrlFor = function (show, episodeNo) {
+    return fill(SM.settings.playerUrl, show, episodeNo);
+  };
 
-    return SM.settings.playUrl
-      .replace('{tmdb}', show.tmdb)
-      .replace('{slug}', slug)
-      .replace('{season}', episode.season)
-      .replace('{episode}', episode.episode);
+  /** @return {Boolean} true if episodes of the show can be played */
+  player.canPlay = function (show) {
+    return !!(player.playerUrlFor(show, '01x01') || player.urlFor(show, '01x01'));
   };
 
   function launch(url) {
@@ -55,16 +85,26 @@
     });
   }
 
+  function remember(show, episodeNo) {
+    if (SM.store.get(show.id)) {
+      SM.storage.set(PENDING_KEY, { id: show.id, name: show.name, episodeNo: episodeNo, time: Date.now() });
+    }
+  }
+
   /** Opens the episode on the TV, e.g. SM.player.play(show, '02x01') */
   player.play = function (show, episodeNo) {
-    var url = player.urlFor(show, episodeNo);
+    var inApp = player.playerUrlFor(show, episodeNo);
+    var url = inApp || player.urlFor(show, episodeNo);
+
     if (!url) {
       SM.ui.toast('There is no play link for ' + show.name + '.');
       return;
     }
+    remember(show, episodeNo);
 
-    if (SM.store.get(show.id)) {
-      SM.storage.set(PENDING_KEY, { id: show.id, name: show.name, episodeNo: episodeNo, time: Date.now() });
+    if (inApp) {
+      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: show.name + ' ' + episodeNo });
+      return;
     }
 
     launch(url).catch(function () {
@@ -78,9 +118,25 @@
     });
   };
 
+  /**
+   * Called when the player of the app was closed.
+   * @param {Number} watched part of the video that was watched, 0 to 1
+   */
+  player.finished = function (show, episodeNo, watched) {
+    var tracked = show && SM.store.get(show.id);
+
+    if (tracked && watched >= 0.9) {
+      SM.storage.remove(PENDING_KEY);
+      SM.store.markSeen(tracked, episodeNo);
+      SM.ui.toast(show.name + ' ' + episodeNo + ' marked as seen');
+      return;
+    }
+    player.askIfSeen();
+  };
+
   /** Plays the next episode to watch of a show, loads the episode list first */
   player.playNext = function (show) {
-    if (!show.tmdb) { return player.play(show); }
+    if (!player.canPlay(show)) { return player.play(show); }
 
     SM.ui.busy(1);
     SM.store.getEpisodes(show).then(function (episodes) {

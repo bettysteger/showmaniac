@@ -1,9 +1,7 @@
 # generated from ../.env by tools/config.mjs, contains API keys
 js/config.js
 
-# Tizen Studio
-.project
-.tproject
+# Tizen Studio (.project and .tproject are needed to import the project)
 .settings
 .sign
 .buildResult

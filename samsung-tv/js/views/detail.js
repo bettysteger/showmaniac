@@ -79,7 +79,7 @@
       SM.ui.showInfo(show, 4).forEach(function (child) {
         if (child) { head.appendChild(child); }
       });
-      if (show.tmdb === 0) {
+      if (show.tmdb === 0 && !SM.player.canPlay(show)) {
         head.appendChild(h('p', { class: 'hint', text: 'There is no play link for this show.' }));
       }
     }
@@ -92,7 +92,7 @@
 
       actions.textContent = '';
 
-      if (show.tmdb && hasAired) {
+      if (SM.player.canPlay(show) && hasAired) {
         actions.appendChild(button('action:play', 'play', next ? 'Play ' + next : 'Play', play));
       }
       if (tracked && hasAired && !show.seen && episodes && next && next !== latest) {
@@ -157,7 +157,7 @@
       }
 
       var buttons = [];
-      if (show.tmdb) {
+      if (SM.player.canPlay(show)) {
         buttons.push({
           label: 'Play',
           icon: 'play',

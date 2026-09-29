@@ -10,7 +10,7 @@
   var KEY = {
     LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, ENTER: 13,
     BACK: 10009, ESCAPE: 27, BACKSPACE: 8,
-    PLAY: 415, PLAY_PAUSE: 10252, P: 80,
+    PLAY: 415, PAUSE: 19, PLAY_PAUSE: 10252, STOP: 413, REWIND: 412, FAST_FORWARD: 417, P: 80,
     IME_DONE: 65376, IME_CANCEL: 65385
   };
   var DIRECTIONS = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
@@ -59,6 +59,7 @@
   }
 
   function close(view) {
+    if (view.destroy) { view.destroy(); }
     if (view.el.parentNode) { view.el.parentNode.removeChild(view.el); }
   }
 
@@ -126,6 +127,13 @@
       if (view && view.onFocus && view.el.contains(el)) { view.onFocus(el); }
     },
 
+    KEY: KEY,
+
+    /** Entry for key events, also used for keys that were pressed inside of embedded pages */
+    onKeyDown: function (event) {
+      onKeyDown(event);
+    },
+
     updateMenu: function () {
       var items = [
         { name: 'home', label: 'Home' },
@@ -174,6 +182,13 @@
       input.blur();
     }
 
+    // screens like the player handle the keys themselves
+    var view = current();
+    if (view && view.onKey && !SM.ui.isDialogOpen() && view.onKey(code, event)) {
+      event.preventDefault();
+      return;
+    }
+
     if (DIRECTIONS[code]) {
       event.preventDefault();
       return SM.nav.move(DIRECTIONS[code]);
@@ -205,7 +220,7 @@
   }
 
   function registerKeys() {
-    ['MediaPlay', 'MediaPlayPause'].forEach(function (name) {
+    ['MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop', 'MediaRewind', 'MediaFastForward'].forEach(function (name) {
       try { window.tizen.tvinputdevice.registerKey(name); } catch (e) { /* not on a TV */ }
     });
   }

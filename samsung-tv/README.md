@@ -52,19 +52,56 @@ Play links are opened in a new tab.
    enter the IP address of your computer and restart the TV
 2. Install [Tizen Studio](https://developer.samsung.com/smarttv/develop/getting-started/setting-up-sdk/installing-tv-sdk.html)
    with the **TV Extensions** and the **Samsung Certificate Extension**
-3. Create a Samsung certificate profile in the **Certificate Manager**
-4. Connect to the TV in the **Device Manager** (IP address of the TV)
+3. Create a Samsung certificate profile in the **Certificate Manager** 
+4. Connect to the TV in the **Device Manager** (IP address of the TV) 192.168.0.141
 5. **File > Import > Tizen > Tizen Project**, select the `samsung-tv` folder (profile `tv-samsung`)
 6. Right click on the project: **Run As > Tizen Web Application**
 
-Or with the command line tools of Tizen Studio:
+Or with one command, which builds, signs, installs and starts the app:
 
 ```sh
-sdb connect <ip of the tv>
-sdb devices                                   # shows the name of the TV
-tizen package -t wgt -s <certificate profile> -- samsung-tv
-tizen install -n showmaniac.wgt -t <name of the tv> -- samsung-tv
+samsung-tv/tools/install.sh <ip of the tv> [certificate profile]
 ```
+
+The certificate profile defaults to `Showmaniac`. If the transfer fails, run it again:
+the TV only accepts one connection and sometimes drops it.
+
+## Player inside the app
+
+With a player address the episode is shown in the player of the app instead of the browser:
+fullscreen, started automatically, controlled with the remote.
+
+Set `playerUrl` in `js/settings.js`, or `TV_PLAYER_URL` in `.env` to keep it out of git
+(then run `node samsung-tv/tools/config.mjs`):
+
+```
+TV_PLAYER_URL=https://player.example.com/embed/{tmdb}/{season}/{episode}
+```
+
+Placeholders: `{tmdb}` `{imdb}` `{tvdb}` `{slug}` `{season}` `{episode}`.
+The address has to be a page with a video player that allows to be embedded.
+
+| Key | Video | Cursor |
+| --- | --- | --- |
+| OK | pause, play | click |
+| Left, right | 10 seconds back, forward | move |
+| Up, down | show the cursor | move |
+| Rewind, fast forward | 1 minute back, forward | |
+| Back | close the player | hide the cursor |
+
+* The video is searched in the page and all pages embedded in it, pages with the video are
+  enlarged to fullscreen, popups are blocked
+* If the video does not start by itself the player clicks into the middle of the page
+  (`playerAutoClick`)
+* If no video is found after 12 seconds the cursor appears
+* An episode that was watched to 90% is marked as seen, otherwise the app asks
+
+Tested on a Samsung QN85B (2022, Tizen 6.5) with a test page: streams (HLS) play in 1080p.
+Addresses of video files or streams (`.mp4`, `.m3u8`) instead of a page do not work on that TV:
+its video player can not look up host names when it is used by the app.
+
+Test page for development: set `SM.settings.playerUrl = '/tools/test/player.html'` in the
+console of the browser.
 
 ## How play links work
 
@@ -85,4 +122,5 @@ to showmaniac.
 | `js/store.js` | shows, sync with Firebase, same data format as `src/stores/shows.js` |
 | `js/nav.js` | focus handling for the remote control |
 | `js/player.js` | opens play links |
+| `js/views/player.js` | player inside the app |
 | `js/views/` | screens: home, detail, search, account |
