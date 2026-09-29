@@ -24,6 +24,16 @@
      */
     playerUrl: config.playerUrl || '',
 
+    /**
+     * Optional: stream proxy in the home network (tools/proxy.mjs), e.g. http://192.168.0.32:5181
+     * The video player of the TV only loads addresses with an IP address, video files and streams
+     * with a host name are loaded through the proxy.
+     */
+    proxyUrl: config.proxyUrl || '',
+
+    // on the TV the stream of the page is played by the video player of the TV once the episode plays
+    playerNativeStreams: true,
+
     // the player clicks into the middle of the page if the video does not start by itself
     playerAutoClick: true,
 

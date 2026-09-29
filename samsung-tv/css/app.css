@@ -635,6 +635,16 @@ h1, h2, p {
   background: #000;
 }
 
+/* AVPlay draws the video on a layer behind the page */
+html.native-video, html.native-video body, html.native-video #stage,
+html.native-video .view-player, html.native-video .player-native {
+  background: transparent;
+}
+
+html.native-video #backdrop {
+  display: none;
+}
+
 .player-cursor {
   position: absolute;
   left: 0;
@@ -675,6 +685,26 @@ h1, h2, p {
   font-size: 44px;
   font-weight: bold;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.player-source {
+  margin-left: 24px;
+  padding: 2px 14px;
+  border-radius: 6px;
+  vertical-align: middle;
+  font-size: 24px;
+  font-weight: normal;
+  text-shadow: none;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.player-source:empty {
+  display: none;
+}
+
+.player-source.native {
+  background: #3bd08c;
+  color: #12151a;
 }
 
 .player-bar {

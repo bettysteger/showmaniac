@@ -2,13 +2,12 @@
  * showmaniac TV - player: shows a video in fullscreen and controls it with the remote.
  *
  * The address is either a page with a video player, which is embedded, or a video file/stream,
- * which is played in a video element. On the TV the app may look into embedded pages:
- * it searches the video in there, starts it and controls it with the keys of the remote.
+ * which is played by the video player of the TV (Samsung AVPlay), in a desktop browser by a
+ * video element. On the TV the app may look into embedded pages: it searches the video in there,
+ * starts it and controls it with the keys of the remote.
  * If no video is found the page is controlled with a cursor.
- *
- * Measured on a Samsung QN85B (Tizen 6.5): embedded pages play streams fine. Video files and
- * streams played directly do not load, the video player of the TV can not look up host names
- * when it is used by the app. See README.
+ * Once the episode plays in the page, its HLS stream is handed to AVPlay (playerNativeStreams),
+ * if AVPlay can not play it the page takes over again.
  *
  *   video mode:  OK = pause, left/right = 10 seconds, up/down = cursor, back = close
  *   cursor mode: arrows = move, OK = click, back = hide the cursor
@@ -23,6 +22,7 @@
   var SCAN_INTERVAL = 1000;
   var NO_VIDEO_AFTER = 12000; // switch to the cursor if the video did not start until then
   var GIVE_UP_AFTER = 25000;  // a video file that did not load until then will not load anymore
+  var NATIVE_START_AFTER = 15000; // the stream of a page did not start in AVPlay: back to the page
   var CLICK_AFTER = 4000;
   var MAX_DEPTH = 5;
   var WIDTH = 1920;
@@ -73,27 +73,213 @@
     }
   }
 
+  /**
+   * The video player of Samsung TVs (AVPlay) with the parts of a video element the player uses:
+   * paused, ended, error, currentTime (also to seek), duration, play(), pause().
+   * It draws on a layer behind the page, the page has to be transparent where the video is.
+   * @param {Element} object <object type="application/avplayer">, has to be in the page before start()
+   * @param {Number} [startAt] position in seconds to start at
+   */
+  function avplayVideo(url, object, startAt) {
+    var avplay = window.webapis.avplay;
+    var ready = false;
+    var seekTo = null;  // position in seconds while seeking
+    var seeking = false;
+
+    function getState() {
+      try { return avplay.getState(); } catch (e) { return 'NONE'; }
+    }
+
+    /** Seeks to the last position that was asked for, one seek at a time */
+    function seek() {
+      if (seeking || seekTo === null) { return; }
+      var target = seekTo;
+      seeking = true;
+
+      function done() {
+        seeking = false;
+        if (seekTo === target) { seekTo = null; }
+        seek();
+      }
+      try {
+        avplay.seekTo(Math.round(target * 1000), done, done);
+      } catch (e) {
+        done();
+      }
+    }
+
+    var video = {
+      ended: false,
+      error: null,
+      buffering: null,  // percent of the buffering before the start, for the message when it fails
+      muted: false,
+      loop: false,
+      videoWidth: 0,
+
+      start: function () {
+        try {
+          avplay.open(url);
+          avplay.setDisplayRect(0, 0, WIDTH, HEIGHT);
+          avplay.setDisplayMethod('PLAYER_DISPLAY_MODE_LETTER_BOX');
+          try {
+            // HLS: start with the best quality instead of switching up after the first segment
+            avplay.setStreamingProperty('ADAPTIVE_INFO', 'STARTBITRATE=HIGHEST');
+          } catch (e) { /* not a stream with qualities */ }
+          avplay.setListener({
+            onstreamcompleted: function () { video.ended = true; },
+            onerror: function (type) { video.error = type || 'error'; },
+            onbufferingprogress: function (percent) { video.buffering = percent; },
+            onbufferingcomplete: function () { video.buffering = 100; }
+          });
+          avplay.prepareAsync(function () {
+            ready = true;
+            video.videoWidth = 1;
+            if (startAt > 0) { video.currentTime = startAt; }
+          }, function (error) {
+            video.error = (error && error.name) || 'prepare failed';
+          });
+        } catch (e) {
+          video.error = e.name || String(e);
+        }
+      },
+
+      play: function () {
+        var state = getState();
+        try {
+          if (state === 'READY' || state === 'PAUSED') { avplay.play(); }
+        } catch (e) { /* ignore */ }
+      },
+
+      pause: function () {
+        try {
+          if (getState() === 'PLAYING') { avplay.pause(); }
+        } catch (e) { /* ignore */ }
+      },
+
+      // the app goes to the background and comes back
+      suspend: function () {
+        try { avplay.suspend(); } catch (e) { /* ignore */ }
+      },
+
+      restore: function () {
+        try { avplay.restore(); } catch (e) { /* ignore */ }
+      },
+
+      stop: function () {
+        try {
+          avplay.stop();
+          avplay.close();
+        } catch (e) { /* ignore */ }
+      },
+
+      getBoundingClientRect: function () {
+        return object.getBoundingClientRect();
+      },
+
+      /** Where AVPlay is, e.g. "IDLE, not prepared, buffering 40%" */
+      describe: function () {
+        return getState() + (ready ? ', prepared' : ', not prepared') +
+          (video.buffering === null ? ', no buffering' : ', buffering ' + video.buffering + '%');
+      }
+    };
+
+    Object.defineProperty(video, 'paused', {
+      get: function () { return getState() !== 'PLAYING'; }
+    });
+    Object.defineProperty(video, 'duration', {
+      get: function () {
+        if (!ready) { return NaN; }
+        try { return avplay.getDuration() / 1000; } catch (e) { return NaN; }
+      }
+    });
+    Object.defineProperty(video, 'currentTime', {
+      get: function () {
+        if (seekTo !== null) { return seekTo; }
+        try { return avplay.getCurrentTime() / 1000; } catch (e) { return 0; }
+      },
+      set: function (seconds) {
+        if (!ready) { return; }
+        seekTo = seconds;
+        seek();
+      }
+    });
+    return video;
+  }
+
+  /** @return {Boolean} true if the address has an IP address instead of a host name */
+  function hasIpAddress(url) {
+    var host = url.split('/')[2] || '';
+    return /^[\d.:\[\]]+$/.test(host);
+  }
+
+  /**
+   * AVPlay can not look up host names, those addresses are loaded through the stream proxy
+   * @param {String} [referer] page the stream belongs to, some servers only deliver with it
+   */
+  function avplayUrl(url, referer) {
+    var proxy = SM.settings.proxyUrl;
+    if (!proxy || hasIpAddress(url)) { return url; }
+    return proxy.replace(/\/$/, '') + '/stream?url=' + encodeURIComponent(url) +
+      (referer ? '&referer=' + encodeURIComponent(referer) : '');
+  }
+
+  /**
+   * The address of the video file or stream a video of a page plays. Players with hls.js play
+   * a blob: address, then the first HLS playlist the page loaded is taken (the main playlist
+   * with all qualities is loaded before the others).
+   * @return {String|null} address, null if it is not known
+   */
+  function streamUrlOf(candidate) {
+    var src = candidate.currentSrc || candidate.src || '';
+    if (/^https?:/.test(src)) { return src; }
+
+    try {
+      var entries = candidate.ownerDocument.defaultView.performance.getEntriesByType('resource');
+      for (var i = 0; i < entries.length; i++) {
+        if (/\.m3u8$/i.test(entries[i].name.split(/[?#]/)[0])) { return entries[i].name; }
+      }
+    } catch (e) { /* page is gone */ }
+    return null;
+  }
+
+  /** @return {Boolean} true on Samsung TVs, which play video files and streams with AVPlay */
+  function hasAvplay() {
+    return !!(window.webapis && window.webapis.avplay);
+  }
+
   /** @param {Object} params { url, title, show, episodeNo } */
   SM.views.player = function (params) {
     var KEY = SM.app.KEY;
     var direct = MEDIA_FILE.test(params.url.split(/[?#]/)[0]); // only the path decides, not the parameters
 
-    var media = direct ?
-      h('video', { class: 'player-media', src: params.url, autoplay: true }) :
-      h('iframe', { class: 'player-media', src: params.url, allow: 'autoplay; fullscreen; encrypted-media', allowfullscreen: true });
+    var native = direct && hasAvplay();
+
+    var media;
+    if (native) {
+      media = h('object', { class: 'player-media player-native', type: 'application/avplayer' });
+    } else if (direct) {
+      media = h('video', { class: 'player-media', src: params.url, autoplay: true });
+    } else {
+      media = h('iframe', { class: 'player-media', src: params.url, allow: 'autoplay; fullscreen; encrypted-media', allowfullscreen: true });
+    }
 
     var cursor = h('div', { class: 'player-cursor hidden' }, [cursorIcon()]);
     var time = h('div', { class: 'player-time' });
     var progress = h('div', { class: 'player-progress' });
     var hint = h('div', { class: 'player-hint' });
+    var source = h('span', { class: 'player-source' }); // who plays the video: the TV or the page
     var hud = h('div', { class: 'player-hud' }, [
-      h('div', { class: 'player-title', text: params.title || '' }),
+      h('div', { class: 'player-title' }, [params.title || '', source]),
       h('div', { class: 'player-bar' }, [progress]),
       h('div', { class: 'player-info' }, [time, hint])
     ]);
     var el = h('div', { class: 'view view-player' }, [media, cursor, hud]);
 
-    var video = direct ? media : null;
+    var video = native ? avplayVideo(avplayUrl(params.url), media) : (direct ? media : null);
+    var switched = false;     // the stream of the page was handed to AVPlay (or tried to)
+    var switchedAt = 0;
+    var pageVideo = null;     // video of the page, kept until AVPlay plays its stream
+    var screen = null;        // <object> of AVPlay after the switch
     var mode = 'video';
     var position = { x: WIDTH / 2, y: HEIGHT / 2 };
     var openedAt = Date.now();
@@ -119,7 +305,16 @@
       }
     }
 
+    function sourceLabel() {
+      if (pageVideo) { return 'TV player: loading'; }
+      if (native) { return 'TV player'; }
+      if (direct) { return 'Video'; }
+      return video ? 'Page' : '';
+    }
+
     function render() {
+      source.textContent = sourceLabel();
+      source.classList.toggle('native', native);
       var hasTime = video && isFinite(video.duration) && video.duration > 0;
 
       time.textContent = hasTime ? formatTime(video.currentTime) + ' / ' + formatTime(video.duration) : '';
@@ -457,6 +652,14 @@
     function check() {
       if (closed) { return; }
 
+      if (pageVideo) {
+        if (video.error || (!started && Date.now() - switchedAt > NATIVE_START_AFTER)) {
+          backToPage();
+        } else if (started) {
+          releasePage();
+        }
+      }
+
       if (!direct) {
         // once the episode plays it is kept, before that the best video is searched every time
         var keep = started && isEpisode(video);
@@ -481,6 +684,9 @@
             showHud(5000);
           }
           if (!direct) { maximize(video); }
+          if (!direct && !switched && isEpisode(video) && hasAvplay() && SM.settings.playerNativeStreams && switchToNative()) {
+            return render();
+          }
         } else if (!started && !pausedByUser && !isPreview(video)) {
           play();
         }
@@ -489,12 +695,19 @@
           watched = Math.max(watched, video.currentTime / video.duration);
         }
         if (video.ended) { return close(); }
+        if (native && video.error) {
+          SM.ui.toast('The TV could not play this video (' + video.error + ').');
+          return close();
+        }
       } else if (!direct) {
         waitForStart();
       }
 
-      if (direct && !started && Date.now() - openedAt > GIVE_UP_AFTER) {
-        SM.ui.toast('The TV could not load this video.');
+      if (direct && !switched && !started && Date.now() - openedAt > GIVE_UP_AFTER) {
+        // measured on a Samsung QN85B: AVPlay only loads addresses with an IP address, not a host name
+        SM.ui.toast(native && !hasIpAddress(avplayUrl(params.url)) ?
+          'The TV could not load this video. Its player only loads addresses with an IP address, set a stream proxy (proxyUrl).' :
+          'The TV could not load this video.');
         return close();
       }
       render();
@@ -516,6 +729,76 @@
     function close() {
       if (closed) { return; }
       SM.router.back();
+    }
+
+    // ---- stream of the page in AVPlay ----
+
+    function setNative(on) {
+      native = on;
+      document.documentElement.classList.toggle('native-video', on);
+      if (on) {
+        document.addEventListener('visibilitychange', onVisibility);
+      } else {
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
+    }
+
+    /** Hands the stream of the episode to AVPlay, the page is paused and hidden meanwhile */
+    function switchToNative() {
+      switched = true;
+      var url = streamUrlOf(video);
+      var referer = null;
+      try { referer = video.ownerDocument.defaultView.location.href; } catch (e) { /* no access */ }
+      if (!url || !hasIpAddress(avplayUrl(url, referer))) { return false; }
+
+      pageVideo = video;
+      try { pageVideo.pause(); } catch (e) { /* ignore */ }
+      unmarkAll();
+      media.style.visibility = 'hidden';
+
+      screen = h('object', { class: 'player-media player-native', type: 'application/avplayer' });
+      el.insertBefore(screen, media);
+      video = avplayVideo(avplayUrl(url, referer), screen, pageVideo.currentTime);
+      direct = true;
+      started = false;
+      switchedAt = Date.now();
+      setNative(true);
+      video.start();
+      showHud(0); // stays visible until AVPlay plays
+      return true;
+    }
+
+    /** AVPlay plays: the page is not needed anymore */
+    function releasePage() {
+      pageVideo = null;
+      media.src = 'about:blank';
+      showHud(5000);
+    }
+
+    /** AVPlay could not play the stream: the page plays on */
+    function backToPage() {
+      SM.ui.toast('The TV player could not play the stream (' + (video.error || 'did not start') + ': ' + video.describe() + '), the page plays on.');
+      video.stop();
+      setNative(false);
+      el.removeChild(screen);
+      screen = null;
+      media.style.visibility = '';
+
+      video = pageVideo;
+      pageVideo = null;
+      direct = false;
+      started = false;
+      play();
+      showHud(5000);
+    }
+
+    // AVPlay has to let go of the video while the app is in the background
+    function onVisibility() {
+      if (document.hidden) {
+        video.suspend();
+      } else {
+        video.restore();
+      }
     }
 
     function onKey(code) {
@@ -569,6 +852,11 @@
 
       init: function () {
         setScreenSaver(false);
+        if (native) {
+          // the video is drawn behind the page
+          setNative(true);
+          video.start();
+        }
         render();
         showHud(5000);
         scanTimer = setInterval(check, SCAN_INTERVAL);
@@ -588,11 +876,15 @@
 
         // stops the video and everything the page has loaded
         try {
-          if (direct) {
+          if (native) {
+            video.stop();
+            setNative(false);
+          }
+          if (media.tagName === 'VIDEO') {
             media.pause();
             media.removeAttribute('src');
             media.load();
-          } else {
+          } else if (media.tagName === 'IFRAME') {
             media.src = 'about:blank';
           }
         } catch (e) { /* ignore */ }

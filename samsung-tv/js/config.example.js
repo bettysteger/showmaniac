@@ -2,5 +2,6 @@
 window.SM_CONFIG = {
   traktApiKey: '', // popular shows
   tmdbApiKey: '',  // IDs for play links, background images
-  playerUrl: ''    // optional, see playerUrl in settings.js
+  playerUrl: '',   // optional, see playerUrl in settings.js
+  proxyUrl: ''     // optional, see proxyUrl in settings.js
 };

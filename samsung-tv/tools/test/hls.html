@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!-- Test page for the player of the app: a player with hls.js, the video plays a blob: address -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>hls.js test</title>
+  <style>
+    body { margin: 0; font: 20px sans-serif; background: #ddd; }
+    video { display: block; width: 960px; height: 540px; margin: 200px auto; background: #000; }
+  </style>
+</head>
+<body>
+  <video id="video" controls muted autoplay></video>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.20/dist/hls.min.js"></script>
+  <script>
+    var video = document.getElementById('video');
+    var hls = new Hls();
+    hls.loadSource('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
+    hls.attachMedia(video);
+    // starts muted like many players, sound comes with the player of the TV
+    hls.on(Hls.Events.MANIFEST_PARSED, function () { video.play(); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+name: showmaniac stream proxy
+version: "1.0.3"
+slug: showmaniac_proxy
+description: Loads video streams for the showmaniac TV app, the TV gets them from the IP address of Home Assistant
+url: https://showmaniac.com
+arch:
+  - aarch64
+  - amd64
+init: false
+startup: application
+boot: auto
+# the proxy listens on port 5181 of Home Assistant itself, like tools/proxy.mjs on a computer
+host_network: true
