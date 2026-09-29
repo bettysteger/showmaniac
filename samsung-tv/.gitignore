@@ -1,0 +1,12 @@
+# generated from ../.env by tools/config.mjs, contains API keys
+js/config.js
+
+# Tizen Studio
+.project
+.tproject
+.settings
+.sign
+.buildResult
+*.wgt
+author-signature.xml
+signature1.xml
