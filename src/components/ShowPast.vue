@@ -53,7 +53,7 @@ const parsedName = computed(() => {
  * Generates 1shows streaming link. Requires the TMDB ID (show.tmdb), which the
  * shows store resolves from the IMDb/TVDB IDs of the TVmaze API. The slug is ignored by 1shows.
  * @example
- *   https://www.1shows.org/tv/66292-big-little-lies?season=2&episode=1&streaming=true
+ *   https://www.1shows.bz/tv/66292-big-little-lies?season=2&episode=1&streaming=true
  * @return {String|undefined}      link to 1shows, undefined if no TMDB ID is known
  */
 const watchUrl = computed(() => {
@@ -64,7 +64,7 @@ const watchUrl = computed(() => {
   let season = parseInt(episodeNo.split('x')[0]);
   let episode = parseInt(episodeNo.split('x')[1]);
 
-  return `https://www.1shows.org/tv/${show.value.tmdb}-${series}?season=${season}&episode=${episode}&streaming=true`
+  return `https://www.1shows.bz/tv/${show.value.tmdb}-${series}?season=${season}&episode=${episode}&streaming=true`
 })
 
 function nextEpisodeNo() {
