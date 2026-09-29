@@ -74,8 +74,9 @@
   /**
    * Opens a link in an app of the TV, the first app that is installed and accepts it wins.
    * @param {Array} appIds defaults to the browser of the TV
+   * @param {Object} [payloads] start data for single apps instead of the link, { appId: 'contentId=...' }
    */
-  function launch(url, appIds) {
+  function launch(url, appIds, payloads) {
     return new Promise(function (resolve, reject) {
       if (!window.tizen || !window.tizen.application) {
         // development in a desktop browser
@@ -83,8 +84,11 @@
       }
 
       // PAYLOAD is how many Samsung TV apps receive deep links
-      var control = new window.tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', url, null, null,
-        [new window.tizen.ApplicationControlData('PAYLOAD', [JSON.stringify({ values: url })])]);
+      function controlFor(appId) {
+        var payload = payloads && payloads[appId];
+        return new window.tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', payload ? null : url, null, null,
+          [new window.tizen.ApplicationControlData('PAYLOAD', [JSON.stringify({ values: payload || url })])]);
+      }
       appIds = (appIds || SM.settings.browserAppIds).filter(function (appId) {
         return appId === null || isInstalled(appId);
       });
@@ -94,7 +98,7 @@
         var appId = appIds.shift();
 
         try {
-          window.tizen.application.launchAppControl(control, appId, resolve, tryNext);
+          window.tizen.application.launchAppControl(controlFor(appId), appId, resolve, tryNext);
         } catch (e) {
           tryNext();
         }
@@ -161,8 +165,10 @@
 
     // the app of the service, the browser of the TV as fallback
     var appIds = (service.appId ? [service.appId] : []).concat(SM.settings.browserAppIds);
+    var payloads = {};
+    if (service.appId && service.payload) { payloads[service.appId] = service.payload; }
 
-    launch(url, appIds).catch(function () {
+    launch(url, appIds, payloads).catch(function () {
       SM.storage.remove(PENDING_KEY);
       SM.ui.toast('Could not open ' + url);
     });

@@ -45,6 +45,8 @@
      *         searchUrl is used if TMDB lists the show but the page was not found
      * appId: the app of the service on the TV, it gets the link. Without the app the link is
      *        opened in the browser of the TV.
+     * clickout: the address of the show is taken from the TMDB watch page, url is the fallback
+     * payload: start data for the app instead of the link, {name} is a parameter of the address
      */
     country: 'AT',
     services: [{
@@ -67,6 +69,8 @@
     }, {
       name: 'Prime Video',
       providers: ['Amazon Prime Video'],
+      clickout: true,
+      payload: 'contentId={gti}', // the app ignores links, it opens the show with this start data
       url: 'https://www.primevideo.com/search?phrase={name}',
       appId: 'org.tizen.primevideo'
     }, {
@@ -74,6 +78,13 @@
       providers: ['Disney Plus'],
       url: 'https://www.disneyplus.com/search?q={name}',
       appId: 'MCmYXNxgcu.DisneyPlus'
+    }, {
+      // TMDB calls Apple TV+ "Apple TV"; the app ignores the name in a search link
+      name: 'Apple TV',
+      providers: ['Apple TV'],
+      clickout: true,
+      url: 'https://tv.apple.com/search?term={name}',
+      appId: 'com.samsung.tv.aria-video'
     }],
 
     // Samsung Internet on Tizen TVs, null lets the TV pick an app for the link

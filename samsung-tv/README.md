@@ -69,16 +69,28 @@ the TV only accepts one connection and sometimes drops it.
 ## Official streaming services
 
 The detail screen shows a button for official services that have the show: Joyn, RTL+,
-Netflix, Prime Video and Disney+ (`services` in `js/settings.js`). The button opens the app of the service on the TV,
+Netflix, Prime Video, Disney+ and Apple TV (`services` in `js/settings.js`). The button opens the app of the service on the TV,
 without the app the link is opened in the browser of the TV. The episode is chosen there and
 the service plays it with your account.
 
 * Which service has a show comes from TMDB (watch providers of `country`, data by JustWatch)
 * Joyn: the link goes to the page of the show, e.g. `https://www.joyn.at/serien/villa-der-versuchung`,
   built from the name. If it does not exist but TMDB lists Joyn, the Joyn search is opened
-* RTL+, Netflix, Prime Video and Disney+: the addresses of shows contain IDs that are not known,
-  the link is a search for the name. Whether the apps use it or only open their start page
-  depends on the app. The RTL+ app ignores links and always shows its start page (tested)
+* Apple TV and Prime Video: the addresses of shows contain IDs, they are taken from the watch
+  page of TMDB, which links to every service through JustWatch (`clickout: true`). A search for
+  the name is the fallback
+
+  | Service | What the app gets | Result (tested) |
+  | --- | --- | --- |
+  | Apple TV (`com.samsung.tv.aria-video`) | the page of the show, `https://tv.apple.com/at/show/ted-lasso/umc.cmc.…` (built from the link to the first episode) | opens the show |
+  | Prime Video | start data `contentId=amzn1.dv.gti.…` instead of a link (`payload`) | opens the show after the profile selection |
+  | Netflix, Disney+ | a search for the name | opens the start page |
+
+  Netflix and Disney+ ignored 15 other variants too: the address of the show with and without
+  start data, `?source=30`, `m=...&source_type=4`, `contentId=...`. Apple TV ignores the name in a
+  search link, Prime Video ignores links
+* RTL+: the link is a search for the name, the app ignores links and always shows its start page
+  (tested)
 * Results are cached on the TV for 7 days
 
 ## Player inside the app
