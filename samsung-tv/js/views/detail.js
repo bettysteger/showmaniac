@@ -157,17 +157,26 @@
       return show.lastSeen ? numbers.indexOf(show.lastSeen) : -1;
     }
 
+    /**
+     * The first episode that has not aired, right after an aired one: air dates are sometimes wrong
+     * (the episode is already out), so it can be played. The player gives up if no stream loads.
+     */
+    function isNextUpcoming(episode) {
+      var index = episodes ? episodes.indexOf(episode) : -1;
+      return index > 0 && !episode.aired && episodes[index - 1].aired;
+    }
+
     function openEpisode(episode) {
-      if (!episode.aired) {
-        return SM.ui.toast(SM.isDate(episode.airstamp) ? 'Airs on ' + SM.formatDate(episode.airstamp, true) : 'Not aired yet');
-      }
+      var airs = SM.isDate(episode.airstamp) ? 'Airs on ' + SM.formatDate(episode.airstamp, true) : 'Not aired yet';
+      var early = !episode.aired;
+      if (early && !isNextUpcoming(episode)) { return SM.ui.toast(airs); }
 
       var buttons = [];
       if (SM.player.canPlay(show)) {
         buttons.push({
           label: 'Play',
           icon: 'play',
-          action: function () { SM.player.play(show, episode.no); }
+          action: function () { SM.player.play(show, episode.no, { early: early }); }
         });
       }
       if (isTracked()) {
@@ -179,7 +188,11 @@
       }
       buttons.push({ label: 'Cancel' });
 
-      SM.ui.dialog({ title: show.name + ' ' + episode.no, message: episode.name, buttons: buttons });
+      SM.ui.dialog({
+        title: show.name + ' ' + episode.no,
+        message: early ? airs + ', it may already be available.' : episode.name,
+        buttons: buttons
+      });
     }
 
     function renderEpisodes() {
@@ -201,7 +214,7 @@
 
         var date = SM.isDate(episode.airstamp) ? SM.formatDate(episode.airstamp, !episode.aired) : 'TBA';
         var item = h('div', {
-          class: 'episode focusable' + (episode.aired ? '' : ' upcoming') + (index <= seenIndex ? ' seen' : ''),
+          class: 'episode focusable' + (episode.aired || isNextUpcoming(episode) ? '' : ' upcoming') + (index <= seenIndex ? ' seen' : ''),
           'data-key': 'episode:' + episode.no,
           onclick: function () { openEpisode(episode); }
         }, [

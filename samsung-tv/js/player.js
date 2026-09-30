@@ -112,8 +112,11 @@
     }
   }
 
-  /** Opens the episode on the TV, e.g. SM.player.play(show, '02x01') */
-  player.play = function (show, episodeNo) {
+  /**
+   * Opens the episode on the TV, e.g. SM.player.play(show, '02x01')
+   * @param {Object} [options] { early: true } the episode has not aired according to the air date
+   */
+  player.play = function (show, episodeNo, options) {
     var inApp = player.playerUrlFor(show, episodeNo);
     var url = inApp || player.urlFor(show, episodeNo);
 
@@ -124,7 +127,7 @@
     remember(show, episodeNo);
 
     if (inApp) {
-      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: show.name + ' ' + episodeNo });
+      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: show.name + ' ' + episodeNo, early: !!(options && options.early) });
       return;
     }
 
@@ -142,10 +145,15 @@
   /**
    * Called when the player of the app was closed.
    * @param {Number} watched part of the video that was watched, 0 to 1
+   * @param {Boolean} [failed] no stream was found, the app does not ask if the episode was watched
    */
-  player.finished = function (show, episodeNo, watched) {
+  player.finished = function (show, episodeNo, watched, failed) {
     var tracked = show && SM.store.get(show.id);
 
+    if (failed) {
+      SM.storage.remove(PENDING_KEY);
+      return;
+    }
     if (tracked && watched >= 0.9) {
       SM.storage.remove(PENDING_KEY);
       SM.store.markSeen(tracked, episodeNo);

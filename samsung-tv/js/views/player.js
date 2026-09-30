@@ -22,6 +22,7 @@
   var SCAN_INTERVAL = 1000;
   var NO_VIDEO_AFTER = 12000; // switch to the cursor if the video did not start until then
   var GIVE_UP_AFTER = 25000;  // a video file that did not load until then will not load anymore
+  var EARLY_GIVE_UP_AFTER = 30000; // an episode before its air date: no video until then, it is not out yet
   var NATIVE_START_AFTER = 15000; // the stream of a page did not start in AVPlay: back to the page
   var CLICK_AFTER = 4000;
   var MAX_DEPTH = 5;
@@ -247,7 +248,7 @@
     return !!(window.webapis && window.webapis.avplay);
   }
 
-  /** @param {Object} params { url, title, show, episodeNo } */
+  /** @param {Object} params { url, title, show, episodeNo, early } early: before the air date */
   SM.views.player = function (params) {
     var KEY = SM.app.KEY;
     var direct = MEDIA_FILE.test(params.url.split(/[?#]/)[0]); // only the path decides, not the parameters
@@ -284,6 +285,8 @@
     var position = { x: WIDTH / 2, y: HEIGHT / 2 };
     var openedAt = Date.now();
     var started = false;      // the video has played at least once
+    var played = false;       // any video played since the player was opened
+    var failed = false;       // closed because no stream was found
     var pausedByUser = false;
     var clicks = 0;
     var watched = 0;          // part of the video that was watched, 0 to 1
@@ -679,6 +682,7 @@
         if (!video.paused && video.currentTime > 0 && !isPreview(video)) {
           if (!started) {
             started = true;
+            played = true;
             // the video was started with the cursor: show it in fullscreen now
             if (mode === 'cursor') { setMode('video'); }
             showHud(5000);
@@ -703,8 +707,16 @@
         waitForStart();
       }
 
+      // an episode played before its air date: without a video it is not out yet, unless the cursor is used
+      if (params.early && !played && Date.now() - openedAt > EARLY_GIVE_UP_AFTER && Date.now() - lastMove > 10000) {
+        failed = true;
+        SM.ui.toast('No stream found for ' + params.title + ', it is probably not available yet.');
+        return close();
+      }
+
       if (direct && !switched && !started && Date.now() - openedAt > GIVE_UP_AFTER) {
         // measured on a Samsung QN85B: AVPlay only loads addresses with an IP address, not a host name
+        failed = true;
         SM.ui.toast(native && !hasIpAddress(avplayUrl(params.url)) ?
           'The TV could not load this video. Its player only loads addresses with an IP address, set a stream proxy (proxyUrl).' :
           'The TV could not load this video.');
@@ -890,8 +902,9 @@
         } catch (e) { /* ignore */ }
 
         var seen = watched;
+        var noStream = failed;
         setTimeout(function () {
-          SM.player.finished(params.show, params.episodeNo, seen);
+          SM.player.finished(params.show, params.episodeNo, seen, noStream);
         }, 0);
       }
     };
