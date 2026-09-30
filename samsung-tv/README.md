@@ -98,12 +98,7 @@ the service plays it with your account.
 With a player address the episode is shown in the player of the app instead of the browser:
 fullscreen, started automatically, controlled with the remote.
 
-Set `playerUrl` in `js/settings.js`, or `TV_PLAYER_URL` in `.env` to keep it out of git
-(then run `node samsung-tv/tools/config.mjs`):
-
-```
-TV_PLAYER_URL=https://player.example.com/embed/{tmdb}/{season}/{episode}
-```
+Set `playerUrl` in `js/settings.js`.
 
 Placeholders: `{tmdb}` `{imdb}` `{tvdb}` `{slug}` `{season}` `{episode}`.
 The address is either a page with a video player that allows to be embedded, or a video file
@@ -129,6 +124,9 @@ by the video player of the TV (Samsung AVPlay), in a desktop browser by a video 
 * If the video did not start after 12 seconds the cursor appears. When the video starts
   (e.g. after a click with the cursor) the player switches back to fullscreen
 * An episode that was watched to 90% is marked as seen, otherwise the app asks
+* The next episode after the last aired one can be played before its air date (air dates are
+  sometimes wrong). If no video starts within 30 seconds, the player closes with a message and
+  does not ask if the episode was watched
 
 Tested on a Samsung QN85B (2022, Tizen 6.5) with a test page: streams (HLS) play in 1080p.
 Video files and streams with AVPlay on that TV: an HLS stream with an IP address

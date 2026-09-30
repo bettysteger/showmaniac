@@ -13,16 +13,17 @@
      * Play link, keep in sync with watchUrl in src/components/ShowPast.vue
      * @example https://www.1shows.bz/tv/66292-big-little-lies?season=2&episode=1&streaming=true
      */
-    playUrl: 'https://www.1shows.bz/tv/{tmdb}-{slug}?season={season}&episode={episode}&streaming=true',
+    // playUrl: 'https://www.1shows.bz/tv/{tmdb}-{slug}?season={season}&episode={episode}&streaming=true',
+    // playUrl: 'https://www.1flex.org/play?id={tmdb}&season={season}&episode={episode}&type=tv&token=23',
+    playUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false',
 
     /**
      * Optional: address that is shown in the player of the app instead of opening the browser.
      * Either a page with a video player that may be embedded, or a video file/stream (mp4, m3u8).
      * Placeholders: {tmdb} {imdb} {tvdb} {slug} {season} {episode}
      * Empty: play links are opened in the browser of the TV.
-     * To keep it out of git set TV_PLAYER_URL in .env and run tools/config.mjs.
      */
-    playerUrl: config.playerUrl || '',
+    playerUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false',
 
     /**
      * Optional: stream proxy in the home network (tools/proxy.mjs), e.g. http://192.168.0.32:5181
