@@ -12,8 +12,48 @@
   var SM = window.SM;
   var PENDING_KEY = 'sm_pending';
   var PENDING_MAX_AGE = 12 * 60 * 60 * 1000;
+  var PROGRESS_KEY = 'sm_progress';
+  var PROGRESS_MIN = 5 * 60;                     // seconds, less is not worth resuming
+  var PROGRESS_MAX_AGE = 60 * 24 * 60 * 60 * 1000;
+  var PROGRESS_MAX_COUNT = 50;
 
   var player = SM.player = {};
+
+  // ---- position to resume an episode, for {progress} in the player address ----
+
+  function progressKey(show, episodeNo) {
+    return show.id + ':' + episodeNo;
+  }
+
+  /** @return {Number} seconds where the episode was left, 0 if none */
+  function progressOf(show, episodeNo) {
+    var entry = SM.storage.get(PROGRESS_KEY, {})[progressKey(show, episodeNo)];
+    return entry && Date.now() - entry.time < PROGRESS_MAX_AGE ? entry.seconds : 0;
+  }
+
+  /** Remembers the position, or forgets it after the first minutes or when the episode was watched */
+  function saveProgress(show, episodeNo, seconds, watched) {
+    var all = SM.storage.get(PROGRESS_KEY, {});
+    var key = progressKey(show, episodeNo);
+    delete all[key];
+
+    if (seconds >= PROGRESS_MIN && watched < 0.9) {
+      all[key] = { seconds: Math.floor(seconds), time: Date.now() };
+    }
+
+    // the newest entries are kept
+    var keys = Object.keys(all).filter(function (k) { return Date.now() - all[k].time < PROGRESS_MAX_AGE; });
+    keys.sort(function (a, b) { return all[b].time - all[a].time; });
+    var kept = {};
+    keys.slice(0, PROGRESS_MAX_COUNT).forEach(function (k) { kept[k] = all[k]; });
+    SM.storage.set(PROGRESS_KEY, kept);
+  }
+
+  function formatTime(seconds) {
+    var hours = Math.floor(seconds / 3600);
+    var text = SM.pad2(Math.floor(seconds % 3600 / 60)) + ':' + SM.pad2(seconds % 60);
+    return hours ? hours + ':' + text : text;
+  }
 
   function slug(show) {
     return String(show.name || '').replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
@@ -33,13 +73,15 @@
       tvdb: show.thetvdb,
       slug: slug(show),
       season: episode.season,
-      episode: episode.episode
+      episode: episode.episode,
+      progress: progressOf(show, episodeNo) // 0 starts at the beginning
     };
     var complete = true;
 
     var url = template.replace(/\{([a-z]+)\}/g, function (placeholder, name) {
-      if (!values[name]) { complete = false; }
-      return encodeURIComponent(values[name]);
+      var value = values[name];
+      if (value === undefined || value === null || value === '') { complete = false; }
+      return encodeURIComponent(value);
     });
     return complete ? url : null;
   }
@@ -127,6 +169,8 @@
     remember(show, episodeNo);
 
     if (inApp) {
+      var progress = progressOf(show, episodeNo);
+      if (progress && SM.settings.playerUrl.indexOf('{progress}') !== -1) { SM.ui.toast('Resuming at ' + formatTime(progress)); }
       SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: show.name + ' ' + episodeNo, early: !!(options && options.early) });
       return;
     }
@@ -146,14 +190,16 @@
    * Called when the player of the app was closed.
    * @param {Number} watched part of the video that was watched, 0 to 1
    * @param {Boolean} [failed] no stream was found, the app does not ask if the episode was watched
+   * @param {Number} [position] seconds where the episode was left
    */
-  player.finished = function (show, episodeNo, watched, failed) {
+  player.finished = function (show, episodeNo, watched, failed, position) {
     var tracked = show && SM.store.get(show.id);
 
     if (failed) {
       SM.storage.remove(PENDING_KEY);
       return;
     }
+    if (show && show.id) { saveProgress(show, episodeNo, position || 0, watched); }
     if (tracked && watched >= 0.9) {
       SM.storage.remove(PENDING_KEY);
       SM.store.markSeen(tracked, episodeNo);

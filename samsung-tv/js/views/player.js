@@ -290,6 +290,7 @@
     var pausedByUser = false;
     var clicks = 0;
     var watched = 0;          // part of the video that was watched, 0 to 1
+    var position = 0;         // seconds, where the episode is
     var lastMove = 0;
     var speed = 0;
     var scanTimer = null;
@@ -698,6 +699,7 @@
         if (isFinite(video.duration) && video.duration > 0) {
           watched = Math.max(watched, video.currentTime / video.duration);
         }
+        if (started && video.currentTime > 0) { position = video.currentTime; }
         if (video.ended) { return close(); }
         if (native && video.error) {
           SM.ui.toast('The TV could not play this video (' + video.error + ').');
@@ -903,8 +905,9 @@
 
         var seen = watched;
         var noStream = failed;
+        var left = position;
         setTimeout(function () {
-          SM.player.finished(params.show, params.episodeNo, seen, noStream);
+          SM.player.finished(params.show, params.episodeNo, seen, noStream, left);
         }, 0);
       }
     };

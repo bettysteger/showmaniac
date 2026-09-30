@@ -100,7 +100,11 @@ fullscreen, started automatically, controlled with the remote.
 
 Set `playerUrl` in `js/settings.js`.
 
-Placeholders: `{tmdb}` `{imdb}` `{tvdb}` `{slug}` `{season}` `{episode}`.
+Placeholders: `{tmdb}` `{imdb}` `{tvdb}` `{slug}` `{season}` `{episode}` `{progress}`.
+
+`{progress}` resumes an episode: when the player is closed after at least 5 minutes and before
+90%, the position is remembered on the TV (50 episodes, 60 days) and given in seconds, otherwise
+it is 0. Example for a player that starts at a position: `...&progress={progress}`.
 The address is either a page with a video player that allows to be embedded, or a video file
 or stream (`.mp4`, `.m4v`, `.mov`, `.webm`, `.m3u8`, `.mpd`). Video files and streams are played
 by the video player of the TV (Samsung AVPlay), in a desktop browser by a video element.

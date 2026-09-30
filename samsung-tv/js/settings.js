@@ -15,15 +15,16 @@
      */
     // playUrl: 'https://www.1shows.bz/tv/{tmdb}-{slug}?season={season}&episode={episode}&streaming=true',
     // playUrl: 'https://www.1flex.org/play?id={tmdb}&season={season}&episode={episode}&type=tv&token=23',
-    playUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false',
+    playUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false&progress={progress}',
 
     /**
      * Optional: address that is shown in the player of the app instead of opening the browser.
      * Either a page with a video player that may be embedded, or a video file/stream (mp4, m3u8).
-     * Placeholders: {tmdb} {imdb} {tvdb} {slug} {season} {episode}
+     * Placeholders: {tmdb} {imdb} {tvdb} {slug} {season} {episode} {progress}
+     * {progress}: seconds where the episode was left (after at least 5 minutes), otherwise 0
      * Empty: play links are opened in the browser of the TV.
      */
-    playerUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false',
+    playerUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false&progress={progress}',
 
     /**
      * Optional: stream proxy in the home network (tools/proxy.mjs), e.g. http://192.168.0.32:5181
