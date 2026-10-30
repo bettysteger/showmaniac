@@ -5,7 +5,7 @@
       <p>
         {{ formatDate(show.latestepisode?.date) }} &nbsp;
         <b>
-          <a v-tooltip="'search this episode'" :href="`http://google.com/search?q=${parsedName} ${show.latestepisode?.number}`" target="_blank" rel="noopener">{{ show.latestepisode?.number }}</a>
+          <a v-tooltip="special ? show.latestepisode.name : 'search this episode'" :href="`http://google.com/search?q=${parsedName} ${special ? show.latestepisode.name : show.latestepisode?.number}`" target="_blank" rel="noopener">{{ special ? 'Special' : show.latestepisode?.number }}</a>
         </b>
         <a v-if="watchUrl && isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchUrl" target="_blank" rel="noopener"><i class="fa fa-fw fa-play-circle-o"></i></a>
         <!-- <a ng-href="{{_.availability[show.id].amazon}}" target="_blank" ng-class="{freeForPrime:_.availability[show.id].freeForPrime, invisible:!_.availability[show.id].amazon}" v-tooltip="'watch via Amazon'" ><i class="fa fa-fw fa-amazon"></i></a> -->
@@ -28,7 +28,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { isDate, formatDate } from './formatDate.js';
-import { useShowsStore } from '../stores/shows';
+import { useShowsStore, isSpecial } from '../stores/shows';
 import { vTooltip } from '../directives/tooltip';
 
 const showsStore = useShowsStore()
@@ -36,6 +36,8 @@ const showsStore = useShowsStore()
 const show = defineModel({ type: Object, required: true })
 
 const changeLastSeen = ref(false)
+// the latest episode is a special (no episode number), it does not change lastSeen
+const special = computed(() => isSpecial(show.value.latestepisode))
 const episodes = ref([])
 
 /**
@@ -60,7 +62,11 @@ const watchUrl = computed(() => {
   if (!show.value.tmdb) { return; }
 
   let episodeNo = nextEpisodeNo();
-  if (!episodeNo) { return; } // e.g. specials without episode number
+  // all numbered episodes are seen: play the special (TMDB number, season 0)
+  if (special.value && (!episodeNo || episodeNo === show.value.lastSeen)) {
+    episodeNo = show.value.latestepisode.tmdbNo;
+  }
+  if (!episodeNo) { return; }
 
   let series = show.value.name.replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
   let season = parseInt(episodeNo.split('x')[0]);
@@ -126,8 +132,13 @@ async function catchUp() {
 
   await getEpisodes();
 
-  show.value.lastSeen = nextEpisodeNo();
-  show.value.seen = show.value.lastSeen === show.value.latestepisode.number;
+  const before = show.value.lastSeen;
+  const next = nextEpisodeNo();
+  if (!next) { return; }
+
+  show.value.lastSeen = next;
+  // a special is caught up once all numbered episodes are seen
+  show.value.seen = special.value ? next === before : next === show.value.latestepisode.number;
   showsStore.updateStorage();
 }
 </script>
