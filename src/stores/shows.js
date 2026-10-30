@@ -184,7 +184,7 @@ export const useShowsStore = defineStore('shows', () => {
   async function getEpisodes(show) {
     const data = await fetch(`${apiUrl}${show.id}/episodes`)
     const json = await data.json()
-    return json.map(convertEpisodeNo)
+    return json.map(convertEpisodeNo).filter(Boolean) // specials have no episode number
   }
 
   function modalLink(show) {
@@ -205,8 +205,9 @@ function updateEpisodeDates(show) {
   const latest = show.latestepisode = show._embedded?.previousepisode || {};
   const next = show.nextepisode = show._embedded?.nextepisode || {};
   // keep external IDs (used to resolve the TMDB ID), drop the rest to keep storage small
-  show.imdb = show.externals?.imdb || undefined;
-  show.thetvdb = show.externals?.thetvdb || undefined;
+  // null instead of undefined: Firebase rejects undefined values
+  show.imdb = show.externals?.imdb || null;
+  show.thetvdb = show.externals?.thetvdb || null;
   ['_embedded', '_links', 'externals'].forEach((key) => delete show[key]);
 
   next.date = show.status === 'Ended' ? 'ENDED' : parseDateTime(next);
