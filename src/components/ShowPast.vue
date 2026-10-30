@@ -60,6 +60,8 @@ const watchUrl = computed(() => {
   if (!show.value.tmdb) { return; }
 
   let episodeNo = nextEpisodeNo();
+  if (!episodeNo) { return; } // e.g. specials without episode number
+
   let series = show.value.name.replace('&', 'and').replace(/[^ a-zA-Z0-9]/g, '').replace(/\s+/g, '-').toLowerCase();
   let season = parseInt(episodeNo.split('x')[0]);
   let episode = parseInt(episodeNo.split('x')[1]);
@@ -90,7 +92,12 @@ async function toggleSeen() {
     } else {
       await getEpisodes();
       const prevIndex = episodes.value.indexOf(episodeNo) - 1;
-      show.value.lastSeen = episodes.value[prevIndex];
+      // Firebase rejects undefined values, so drop lastSeen if there is no previous episode
+      if (episodes.value[prevIndex]) {
+        show.value.lastSeen = episodes.value[prevIndex];
+      } else {
+        delete show.value.lastSeen;
+      }
     }
   }
   showsStore.updateStorage();

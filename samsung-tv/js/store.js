@@ -85,8 +85,8 @@
     var next = show.nextepisode = embedded.nextepisode || {};
 
     // keep external IDs (used to resolve the TMDB ID), drop the rest to keep storage small
-    show.imdb = (show.externals && show.externals.imdb) || undefined;
-    show.thetvdb = (show.externals && show.externals.thetvdb) || undefined;
+    show.imdb = (show.externals && show.externals.imdb) || null;
+    show.thetvdb = (show.externals && show.externals.thetvdb) || null;
     ['_embedded', '_links', 'externals'].forEach(function (key) { delete show[key]; });
 
     next.date = show.status === 'Ended' ? 'ENDED' : parseDateTime(next);
