@@ -27,6 +27,12 @@
     playerUrl: 'https://www.vidy.st/tv/{tmdb}/{season}/{episode}?color=3bd08c&autoplay=true&episodeSelector=false&nextEpisode=false&autoplayNextEpisode=false&progress={progress}',
 
     /**
+     * Address of a movie for the player of the app, movies are searched on TMDB (screen "Movies").
+     * Placeholders: {tmdb} {progress}, like playerUrl. Empty: no movie search.
+     */
+    moviePlayerUrl: 'https://www.vidy.st/movie/{tmdb}?color=3bd08c&autoplay=true&progress={progress}',
+
+    /**
      * Optional: stream proxy in the home network (tools/proxy.mjs), e.g. http://192.168.0.32:5181
      * The video player of the TV only loads addresses with an IP address, video files and streams
      * with a host name are loaded through the proxy.

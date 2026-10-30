@@ -138,6 +138,7 @@
       var items = [
         { name: 'home', label: 'Home' },
         { name: 'search', label: 'Search' },
+        { name: 'movies', label: 'Movies' },
         { name: 'account', label: SM.auth.isSignedIn() ? SM.auth.user.email : 'Sign in' }
       ];
       var focused = SM.nav.current && SM.nav.current.getAttribute('data-key');
