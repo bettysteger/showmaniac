@@ -172,21 +172,33 @@ export const useShowsStore = defineStore('shows', () => {
   }
 
   /**
-   * Looks up the TMDB number of a special that is the latest episode, e.g. "00x02": TMDB puts
-   * specials in season 0 and streaming links need it. Matched by air date, then by name.
-   * Stored as latestepisode.tmdbNo (null = no match).
+   * Looks up the TMDB number of a special that is the latest episode, streaming links need it.
+   * TVmaze sometimes lists an episode as special that TMDB counts as a regular episode
+   * (e.g. Ghosts 06x01), so the season of the special is searched by air date first, then
+   * season 0 (TMDB specials) by air date and name.
+   * Stored as latestepisode.tmdbNo, e.g. "06x01" or "00x02" (null = no match).
    */
   async function resolveSpecialNo(show) {
     const latest = show.latestepisode;
     if (!isSpecial(latest) || latest.tmdbNo !== undefined || !show.tmdb || !tmdbApiKey) { return; }
 
+    const tmdbSeason = async (number) => {
+      const response = await fetch(`https://api.themoviedb.org/3/tv/${show.tmdb}/season/${number}?api_key=${tmdbApiKey}`);
+      return response.ok ? (await response.json()).episodes || [] : [];
+    };
+    const byDate = (episode) => latest.airdate && episode.air_date === latest.airdate;
+    const byName = (episode) => episode.name?.toLowerCase() === latest.name?.toLowerCase();
+
     try {
-      const response = await fetch(`https://api.themoviedb.org/3/tv/${show.tmdb}/season/0?api_key=${tmdbApiKey}`);
-      const episodes = (await response.json()).episodes || [];
-      const byName = (episode) => episode.name?.toLowerCase() === latest.name?.toLowerCase();
-      const byDate = episodes.filter((episode) => latest.airdate && episode.air_date === latest.airdate);
-      const match = byDate.length > 1 ? (byDate.find(byName) || byDate[0]) : byDate[0] || episodes.find(byName);
-      latest.tmdbNo = match ? `00x${match.episode_number.toString().padStart(2, '0')}` : null;
+      let match = latest.season ? (await tmdbSeason(latest.season)).find(byDate) : null;
+      if (!match) {
+        const specials = await tmdbSeason(0);
+        const sameDay = specials.filter(byDate);
+        match = sameDay.length > 1 ? (sameDay.find(byName) || sameDay[0]) : sameDay[0] || specials.find(byName);
+      }
+      latest.tmdbNo = match
+        ? `${match.season_number.toString().padStart(2, '0')}x${match.episode_number.toString().padStart(2, '0')}`
+        : null;
     } catch {
       // network error: retry next time
     }

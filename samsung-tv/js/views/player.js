@@ -907,7 +907,7 @@
         var noStream = failed;
         var left = position;
         setTimeout(function () {
-          SM.player.finished(params.show, params.episodeNo, seen, noStream, left);
+          SM.player.finished(params.show, params.episodeNo, seen, noStream, left, params.special);
         }, 0);
       }
     };
