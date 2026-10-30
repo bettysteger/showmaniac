@@ -1,5 +1,5 @@
 /*
- * showmaniac TV - network access: TVmaze (show data), TMDB (IDs for play links, backdrops), Trakt (popular).
+ * showmaniac TV - network access: TVmaze (show data), TMDB (IDs for play links, backdrops, movies), Trakt (popular).
  */
 (function () {
   'use strict';
@@ -115,6 +115,18 @@
       /** Season 0 holds the specials on TMDB */
       season: function (tmdbId, number) {
         return request('https://api.themoviedb.org/3/tv/' + tmdbId + '/season/' + number + '?api_key=' + SM.settings.tmdbApiKey);
+      },
+      /** @return {Promise} movies, e.g. [{ id, title, poster_path, release_date }] */
+      searchMovies: function (query) {
+        return request('https://api.themoviedb.org/3/search/movie?include_adult=false&query=' + encodeURIComponent(query) +
+          '&api_key=' + SM.settings.tmdbApiKey).then(function (json) {
+          return (json && json.results) || [];
+        });
+      },
+      popularMovies: function () {
+        return request('https://api.themoviedb.org/3/movie/popular?api_key=' + SM.settings.tmdbApiKey).then(function (json) {
+          return (json && json.results) || [];
+        });
       }
     },
 

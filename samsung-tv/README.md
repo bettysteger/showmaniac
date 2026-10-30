@@ -15,6 +15,8 @@ Tizen web app, plain HTML/CSS/JS without a build step, so it also runs on older 
 * Play opens the play link of the next episode in the browser of the TV
 * After watching, the app asks if the episode should be marked as seen
 * Mark episodes as seen, catch up, track and remove shows
+* Movies: search movies on TMDB (popular movies before typing), OK on a movie plays it right away
+  in the player of the app. Movies are not tracked, only the position is remembered to resume
 * Sign in with your showmaniac account (email and password) to sync with the web app.
   Without an account the list is stored on the TV.
 
@@ -37,6 +39,7 @@ node samsung-tv/tools/config.mjs
 ```
 
 * `VITE_TMDB_API_KEY` is needed for play links of shows that were not added in the web app
+  and for the movie search
 * `VITE_TRAKT_API_KEY` is needed for popular shows
 
 ## Development in the browser
@@ -67,6 +70,13 @@ samsung-tv/tools/install.sh <ip of the tv> [certificate profile]
 
 The certificate profile defaults to `Showmaniac`. If the transfer fails, run it again:
 the TV only accepts one connection and sometimes drops it.
+
+## Movies
+
+The **Movies** screen searches movies on TMDB, before typing it shows popular movies. OK (or Play)
+on a movie opens it in the player of the app with `moviePlayerUrl` in `js/settings.js`,
+placeholders `{tmdb}` and `{progress}`. The position is remembered like for episodes (key
+`movie:<tmdb id>`), there is no watchlist and nothing is synced.
 
 ## Official streaming services
 
@@ -259,4 +269,4 @@ to showmaniac.
 | `js/views/player.js` | player inside the app |
 | `tools/proxy.mjs` | stream proxy for the player |
 | `tools/homeassistant/` | the stream proxy as a Home Assistant add-on |
-| `js/views/` | screens: home, detail, search, account |
+| `js/views/` | screens: home, detail, search (shows and movies), account |

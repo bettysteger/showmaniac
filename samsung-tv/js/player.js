@@ -5,6 +5,7 @@
  * the app (views/player.js). Without, the play link is opened in the browser of the TV:
  * the streaming page does not allow to be embedded into another page (X-Frame-Options).
  * When coming back the app asks if the episode should be marked as seen.
+ * Movies (searched on TMDB) are always shown in the player of the app (moviePlayerUrl).
  */
 (function () {
   'use strict';
@@ -19,22 +20,26 @@
 
   var player = SM.player = {};
 
-  // ---- position to resume an episode, for {progress} in the player address ----
+  // ---- position to resume an episode or a movie, for {progress} in the player address ----
 
   function progressKey(show, episodeNo) {
     return show.id + ':' + episodeNo;
   }
 
-  /** @return {Number} seconds where the episode was left, 0 if none */
-  function progressOf(show, episodeNo) {
-    var entry = SM.storage.get(PROGRESS_KEY, {})[progressKey(show, episodeNo)];
+  // TMDB IDs of movies and TVmaze IDs of shows may be the same number
+  function movieProgressKey(movie) {
+    return 'movie:' + movie.id;
+  }
+
+  /** @return {Number} seconds where the episode or movie was left, 0 if none */
+  function progressOf(key) {
+    var entry = SM.storage.get(PROGRESS_KEY, {})[key];
     return entry && Date.now() - entry.time < PROGRESS_MAX_AGE ? entry.seconds : 0;
   }
 
-  /** Remembers the position, or forgets it after the first minutes or when the episode was watched */
-  function saveProgress(show, episodeNo, seconds, watched) {
+  /** Remembers the position, or forgets it after the first minutes or when it was watched */
+  function saveProgress(key, seconds, watched) {
     var all = SM.storage.get(PROGRESS_KEY, {});
-    var key = progressKey(show, episodeNo);
     delete all[key];
 
     if (seconds >= PROGRESS_MIN && watched < 0.9) {
@@ -74,7 +79,7 @@
       slug: slug(show),
       season: episode.season,
       episode: episode.episode,
-      progress: progressOf(show, episodeNo) // 0 starts at the beginning
+      progress: progressOf(progressKey(show, episodeNo)) // 0 starts at the beginning
     };
     var complete = true;
 
@@ -172,7 +177,7 @@
     if (!special) { remember(show, episodeNo); }
 
     if (inApp) {
-      var progress = progressOf(show, episodeNo);
+      var progress = progressOf(progressKey(show, episodeNo));
       if (progress && SM.settings.playerUrl.indexOf('{progress}') !== -1) { SM.ui.toast('Resuming at ' + formatTime(progress)); }
       SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: (options && options.title) || show.name + ' ' + episodeNo, early: !!(options && options.early), special: special });
       return;
@@ -203,7 +208,7 @@
       SM.storage.remove(PENDING_KEY);
       return;
     }
-    if (show && show.id) { saveProgress(show, episodeNo, position || 0, watched); }
+    if (show && show.id) { saveProgress(progressKey(show, episodeNo), position || 0, watched); }
     if (special) { return; }
     if (tracked && watched >= 0.9) {
       SM.storage.remove(PENDING_KEY);
@@ -212,6 +217,39 @@
       return;
     }
     player.askIfSeen();
+  };
+
+  /** @return {Boolean} true if movies can be played */
+  player.canPlayMovies = function () {
+    return !!(SM.settings.moviePlayerUrl && SM.settings.tmdbApiKey);
+  };
+
+  /** @return {String} e.g. "Inception (2010)" */
+  player.movieTitle = function (movie) {
+    var year = (movie.release_date || '').slice(0, 4);
+    return (movie.title || '') + (year ? ' (' + year + ')' : '');
+  };
+
+  /** Shows a movie from the TMDB search in the player of the app, e.g. SM.player.playMovie({ id: 27205, title: 'Inception' }) */
+  player.playMovie = function (movie) {
+    var template = SM.settings.moviePlayerUrl;
+    if (!template || !movie || !movie.id) {
+      SM.ui.toast('There is no player address for movies (moviePlayerUrl).');
+      return;
+    }
+
+    var progress = progressOf(movieProgressKey(movie));
+    var url = template.replace(/\{([a-z]+)\}/g, function (placeholder, name) {
+      return encodeURIComponent({ tmdb: movie.id, progress: progress }[name]);
+    });
+
+    if (progress && template.indexOf('{progress}') !== -1) { SM.ui.toast('Resuming at ' + formatTime(progress)); }
+    SM.router.go('player', { url: url, movie: movie, title: player.movieTitle(movie) });
+  };
+
+  /** Called when the player of the app was closed after a movie, see player.finished */
+  player.movieFinished = function (movie, watched, failed, position) {
+    if (!failed) { saveProgress(movieProgressKey(movie), position || 0, watched); }
   };
 
   /**

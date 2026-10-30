@@ -248,7 +248,10 @@
     return !!(window.webapis && window.webapis.avplay);
   }
 
-  /** @param {Object} params { url, title, show, episodeNo, early } early: before the air date */
+  /**
+   * @param {Object} params { url, title, show, episodeNo, early } early: before the air date,
+   *   or { url, title, movie } for a movie
+   */
   SM.views.player = function (params) {
     var KEY = SM.app.KEY;
     var direct = MEDIA_FILE.test(params.url.split(/[?#]/)[0]); // only the path decides, not the parameters
@@ -907,6 +910,7 @@
         var noStream = failed;
         var left = position;
         setTimeout(function () {
+          if (params.movie) { return SM.player.movieFinished(params.movie, seen, noStream, left); }
           SM.player.finished(params.show, params.episodeNo, seen, noStream, left, params.special);
         }, 0);
       }

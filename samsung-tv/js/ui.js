@@ -118,7 +118,24 @@
     return card;
   };
 
-  // ---- background image ----
+  /** Poster of a movie from TMDB, OK plays it right away */
+  ui.movieCard = function (movie, key) {
+    var card = h('div', {
+      class: 'card focusable',
+      'data-key': key,
+      onclick: function () { SM.player.playMovie(movie); }
+    }, [
+      movie.poster_path ?
+        h('img', { src: 'https://image.tmdb.org/t/p/w342' + movie.poster_path, alt: '' }) :
+        h('div', { class: 'card-name', text: movie.title }),
+      movie.release_date ? h('div', { class: 'card-label', text: movie.release_date.slice(0, 4) }) : null
+    ]);
+
+    card._movie = movie;
+    return card;
+  };
+
+    // ---- background image ----
 
   var layers = null;
   var front = 0;
