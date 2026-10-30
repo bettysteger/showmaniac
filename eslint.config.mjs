@@ -1,25 +1,25 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+import pluginVue from "eslint-plugin-vue";
+import skipFormatting from "@vue/eslint-config-prettier/skip-formatting";
+import globals from "globals";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
-
-export default [...compat.extends(
-    "plugin:vue/vue3-essential",
-    "eslint:recommended",
-    "@vue/eslint-config-prettier/skip-formatting",
-), {
+export default [
+  {
+    // samsung-tv/ is a separate ES5 app with its own conventions
+    ignores: ["dist/**", "dev-dist/**", "node_modules/**", "samsung-tv/**"],
+  },
+  js.configs.recommended,
+  ...pluginVue.configs["flat/essential"],
+  skipFormatting,
+  {
     languageOptions: {
-        ecmaVersion: "latest"
+      ecmaVersion: "latest",
+      globals: {
+        ...globals.browser,
+      },
     },
     rules: {
-        "vue/multi-word-component-names": 0,
+      "vue/multi-word-component-names": 0,
     },
-}];
+  },
+];
