@@ -294,7 +294,7 @@
             SM.store.specialNo(show, special).then(function (episodeNo) {
               SM.ui.busy(-1);
               if (!episodeNo) { return SM.ui.toast('There is no play link for this special.'); }
-              SM.player.play(show, episodeNo, { title: title });
+              SM.player.play(show, episodeNo, { title: title, special: true });
             }, function () {
               SM.ui.busy(-1);
               SM.ui.toast('Could not load the special. Please check the network connection.');

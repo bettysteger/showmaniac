@@ -148,13 +148,8 @@
     });
   }
 
-  /** Specials are season 0 (TMDB numbering), they are not part of the seen tracking */
-  function isSpecial(episodeNo) {
-    return SM.parseEpisodeNo(episodeNo).season === 0;
-  }
-
   function remember(show, episodeNo) {
-    if (SM.store.get(show.id) && !isSpecial(episodeNo)) {
+    if (SM.store.get(show.id)) {
       SM.storage.set(PENDING_KEY, { id: show.id, name: show.name, episodeNo: episodeNo, time: Date.now() });
     }
   }
@@ -162,7 +157,8 @@
   /**
    * Opens the episode on the TV, e.g. SM.player.play(show, '02x01')
    * @param {Object} [options] { early: true } the episode has not aired according to the air date,
-   *   { title: 'Ghosts Special: ...' } title in the player instead of the episode number
+   *   { title: 'Ghosts Special: ...' } title in the player instead of the episode number,
+   *   { special: true } a special, not part of the seen tracking (its number is the TMDB one)
    */
   player.play = function (show, episodeNo, options) {
     var inApp = player.playerUrlFor(show, episodeNo);
@@ -172,12 +168,13 @@
       SM.ui.toast('There is no play link for ' + show.name + '.');
       return;
     }
-    remember(show, episodeNo);
+    var special = !!(options && options.special);
+    if (!special) { remember(show, episodeNo); }
 
     if (inApp) {
       var progress = progressOf(show, episodeNo);
       if (progress && SM.settings.playerUrl.indexOf('{progress}') !== -1) { SM.ui.toast('Resuming at ' + formatTime(progress)); }
-      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: (options && options.title) || show.name + ' ' + episodeNo, early: !!(options && options.early) });
+      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: (options && options.title) || show.name + ' ' + episodeNo, early: !!(options && options.early), special: special });
       return;
     }
 
@@ -197,8 +194,9 @@
    * @param {Number} watched part of the video that was watched, 0 to 1
    * @param {Boolean} [failed] no stream was found, the app does not ask if the episode was watched
    * @param {Number} [position] seconds where the episode was left
+   * @param {Boolean} [special] a special, the progress is saved but it is not marked as seen
    */
-  player.finished = function (show, episodeNo, watched, failed, position) {
+  player.finished = function (show, episodeNo, watched, failed, position, special) {
     var tracked = show && SM.store.get(show.id);
 
     if (failed) {
@@ -206,7 +204,7 @@
       return;
     }
     if (show && show.id) { saveProgress(show, episodeNo, position || 0, watched); }
-    if (isSpecial(episodeNo)) { return; }
+    if (special) { return; }
     if (tracked && watched >= 0.9) {
       SM.storage.remove(PENDING_KEY);
       SM.store.markSeen(tracked, episodeNo);

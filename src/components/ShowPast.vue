@@ -5,7 +5,7 @@
       <p>
         {{ formatDate(show.latestepisode?.date) }} &nbsp;
         <b>
-          <a v-tooltip="special ? show.latestepisode.name : 'search this episode'" :href="`http://google.com/search?q=${parsedName} ${special ? show.latestepisode.name : show.latestepisode?.number}`" target="_blank" rel="noopener">{{ special ? 'Special' : show.latestepisode?.number }}</a>
+          <a v-tooltip="special ? [show.latestepisode.name, show.latestepisode.tmdbNo].filter(Boolean).join(' · ') : 'search this episode'" :href="`http://google.com/search?q=${parsedName} ${special ? show.latestepisode.name : show.latestepisode?.number}`" target="_blank" rel="noopener">{{ special ? 'Special' : show.latestepisode?.number }}</a>
         </b>
         <a v-if="watchUrl && isDate(show.latestepisode?.date)" v-tooltip="'watch online'" :href="watchUrl" target="_blank" rel="noopener"><i class="fa fa-fw fa-play-circle-o"></i></a>
         <!-- <a ng-href="{{_.availability[show.id].amazon}}" target="_blank" ng-class="{freeForPrime:_.availability[show.id].freeForPrime, invisible:!_.availability[show.id].amazon}" v-tooltip="'watch via Amazon'" ><i class="fa fa-fw fa-amazon"></i></a> -->
@@ -62,7 +62,7 @@ const watchUrl = computed(() => {
   if (!show.value.tmdb) { return; }
 
   let episodeNo = nextEpisodeNo();
-  // all numbered episodes are seen: play the special (TMDB number, season 0)
+  // all numbered episodes are seen: play the special (TMDB number, e.g. 06x01 or 00x02)
   if (special.value && (!episodeNo || episodeNo === show.value.lastSeen)) {
     episodeNo = show.value.latestepisode.tmdbNo;
   }

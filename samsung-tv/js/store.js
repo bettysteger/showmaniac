@@ -10,7 +10,7 @@
   var STORAGE_KEY = 'showmaniac';
   var listeners = [];
   var episodeCache = {};
-  var specialCache = {}; // TMDB season 0 per TMDB ID
+  var specialCache = {}; // TMDB seasons per 'tmdbId:season', used to find specials
   var queue = Promise.resolve(); // remote operations run one after another
 
   var store = SM.store = { shows: [], lastSync: 0 };
@@ -355,28 +355,46 @@
     return loadEpisodes(show).then(function (result) { return result.specials; });
   };
 
+  /** Episodes of a TMDB season, cached per show and season */
+  function tmdbSeason(show, number) {
+    var key = show.tmdb + ':' + number;
+    if (!specialCache[key]) {
+      specialCache[key] = SM.api.tmdb.season(show.tmdb, number).then(function (json) {
+        return (json && json.episodes) || [];
+      }, function (error) {
+        delete specialCache[key];
+        throw error;
+      });
+    }
+    return specialCache[key];
+  }
+
   /**
-   * Episode number of a special on TMDB, where specials are season 0, e.g. "00x05".
-   * Players use the TMDB numbering. Matched by air date, then by name.
-   * @return {Promise} "00x05", null if TMDB does not know the special
+   * Episode number of a special on TMDB, players use the TMDB numbering.
+   * TVmaze sometimes lists an episode as special that TMDB counts as a regular episode
+   * (e.g. Ghosts 06x01), so the season of the special is searched by air date first, then
+   * season 0 (TMDB specials) by air date and name.
+   * @return {Promise} e.g. "06x01" or "00x05", null if TMDB does not know the special
    */
   store.specialNo = function (show, special) {
     if (!show.tmdb || !SM.settings.tmdbApiKey) { return Promise.resolve(null); }
 
-    var key = show.tmdb;
-    if (!specialCache[key]) {
-      specialCache[key] = SM.api.tmdb.season(show.tmdb, 0).then(function (json) {
-        return (json && json.episodes) || [];
-      });
-      specialCache[key].catch(function () { delete specialCache[key]; });
-    }
+    var name = (special.name || '').toLowerCase();
+    function byName(episode) { return (episode.name || '').toLowerCase() === name; }
+    function byDate(episode) { return !!special.airdate && episode.air_date === special.airdate; }
+    function numberOf(episode) { return SM.episodeNo(episode.season_number, episode.episode_number); }
 
-    return specialCache[key].then(function (list) {
-      var name = (special.name || '').toLowerCase();
-      var byName = function (episode) { return (episode.name || '').toLowerCase() === name; };
-      var byDate = list.filter(function (episode) { return special.airdate && episode.air_date === special.airdate; });
-      var match = byDate.length > 1 ? (byDate.filter(byName)[0] || byDate[0]) : byDate[0] || list.filter(byName)[0];
-      return match ? SM.episodeNo(0, match.episode_number) : null;
+    var regular = special.season ? tmdbSeason(show, special.season).catch(function () { return []; }) : Promise.resolve([]);
+
+    return regular.then(function (list) {
+      var match = list.filter(byDate)[0];
+      if (match) { return numberOf(match); }
+
+      return tmdbSeason(show, 0).then(function (specials) {
+        var sameDay = specials.filter(byDate);
+        var found = sameDay.length > 1 ? (sameDay.filter(byName)[0] || sameDay[0]) : sameDay[0] || specials.filter(byName)[0];
+        return found ? numberOf(found) : null;
+      });
     });
   };
 
