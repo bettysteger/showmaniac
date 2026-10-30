@@ -4,7 +4,8 @@
       <h4>{{ show.name }} &nbsp;<router-link :to="showsStore.modalLink(show)"><i class="fa fa-info-circle"></i></router-link></h4>
       <p>
         {{ formatDate(show.nextepisode?.date) }} &nbsp;
-        <b>{{ show.nextepisode?.number }}</b>
+        <b v-if="show.nextepisode?.number">{{ show.nextepisode.number }}</b>
+        <b v-else-if="show.nextepisode?.name" v-tooltip="show.nextepisode.name">Special</b>
         <small v-if="show.nextepisode?.date === 'tba'">({{ show.status }})</small>
       </p>
     </div>
@@ -16,6 +17,7 @@
 <script setup>
 import { formatDate } from './formatDate.js';
 import { useShowsStore } from '../stores/shows';
+import { vTooltip } from '../directives/tooltip';
 
 const showsStore = useShowsStore()
 

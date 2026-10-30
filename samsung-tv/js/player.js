@@ -148,15 +148,21 @@
     });
   }
 
+  /** Specials are season 0 (TMDB numbering), they are not part of the seen tracking */
+  function isSpecial(episodeNo) {
+    return SM.parseEpisodeNo(episodeNo).season === 0;
+  }
+
   function remember(show, episodeNo) {
-    if (SM.store.get(show.id)) {
+    if (SM.store.get(show.id) && !isSpecial(episodeNo)) {
       SM.storage.set(PENDING_KEY, { id: show.id, name: show.name, episodeNo: episodeNo, time: Date.now() });
     }
   }
 
   /**
    * Opens the episode on the TV, e.g. SM.player.play(show, '02x01')
-   * @param {Object} [options] { early: true } the episode has not aired according to the air date
+   * @param {Object} [options] { early: true } the episode has not aired according to the air date,
+   *   { title: 'Ghosts Special: ...' } title in the player instead of the episode number
    */
   player.play = function (show, episodeNo, options) {
     var inApp = player.playerUrlFor(show, episodeNo);
@@ -171,7 +177,7 @@
     if (inApp) {
       var progress = progressOf(show, episodeNo);
       if (progress && SM.settings.playerUrl.indexOf('{progress}') !== -1) { SM.ui.toast('Resuming at ' + formatTime(progress)); }
-      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: show.name + ' ' + episodeNo, early: !!(options && options.early) });
+      SM.router.go('player', { url: inApp, show: show, episodeNo: episodeNo, title: (options && options.title) || show.name + ' ' + episodeNo, early: !!(options && options.early) });
       return;
     }
 
@@ -200,6 +206,7 @@
       return;
     }
     if (show && show.id) { saveProgress(show, episodeNo, position || 0, watched); }
+    if (isSpecial(episodeNo)) { return; }
     if (tracked && watched >= 0.9) {
       SM.storage.remove(PENDING_KEY);
       SM.store.markSeen(tracked, episodeNo);

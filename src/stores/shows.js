@@ -128,13 +128,18 @@ export const useShowsStore = defineStore('shows', () => {
     data = await data.json()
 
     let beforeTba = show.latestepisode?.date === 'tba';
+    const beforeLatestId = show.latestepisode?.id;
     updateEpisodeDates(data);
     Object.assign(show, data) // to not overwrite 'seen' or 'lastSeen'
 
-    if(show.lastSeen || beforeTba) {
+    if (isSpecial(show.latestepisode)) {
+      // specials are not part of lastSeen: a new special is unseen, otherwise keep 'seen'
+      if (show.latestepisode.id !== beforeLatestId) { show.seen = false; }
+    } else if(show.lastSeen || beforeTba) {
       show.seen = show.latestepisode.number === show.lastSeen;
     }
     await resolveTmdbId(show);
+    await resolveSpecialNo(show);
     show.loading = false;
   }
 
@@ -166,10 +171,32 @@ export const useShowsStore = defineStore('shows', () => {
     if (!failed) { show.tmdb = 0; }
   }
 
+  /**
+   * Looks up the TMDB number of a special that is the latest episode, e.g. "00x02": TMDB puts
+   * specials in season 0 and streaming links need it. Matched by air date, then by name.
+   * Stored as latestepisode.tmdbNo (null = no match).
+   */
+  async function resolveSpecialNo(show) {
+    const latest = show.latestepisode;
+    if (!isSpecial(latest) || latest.tmdbNo !== undefined || !show.tmdb || !tmdbApiKey) { return; }
+
+    try {
+      const response = await fetch(`https://api.themoviedb.org/3/tv/${show.tmdb}/season/0?api_key=${tmdbApiKey}`);
+      const episodes = (await response.json()).episodes || [];
+      const byName = (episode) => episode.name?.toLowerCase() === latest.name?.toLowerCase();
+      const byDate = episodes.filter((episode) => latest.airdate && episode.air_date === latest.airdate);
+      const match = byDate.length > 1 ? (byDate.find(byName) || byDate[0]) : byDate[0] || episodes.find(byName);
+      latest.tmdbNo = match ? `00x${match.episode_number.toString().padStart(2, '0')}` : null;
+    } catch {
+      // network error: retry next time
+    }
+  }
+
   async function update(show) {
     const needsTmdbId = tmdbApiKey && show.tmdb === undefined;
+    const needsSpecialNo = tmdbApiKey && show.tmdb && isSpecial(show.latestepisode) && show.latestepisode.tmdbNo === undefined;
 
-    if(!needsTmdbId && show.nextepisode && show.latestepisode?.date) {
+    if(!needsTmdbId && !needsSpecialNo && show.nextepisode && show.latestepisode?.date) {
       let nextDate = new Date(show.nextepisode.date);
       let inFuture = nextDate.getTime() === nextDate.getTime() && nextDate > new Date();
       // Don't load if show has ended or nextepisode date is in the future
@@ -201,6 +228,12 @@ export const useShowsStore = defineStore('shows', () => {
 })
 
 // Helpers
+
+/** Specials (e.g. a Halloween episode) have an air date but no episode number */
+export function isSpecial(episode) {
+  return !!episode && !episode.number && !!episode.airstamp;
+}
+
 function updateEpisodeDates(show) {
   const latest = show.latestepisode = show._embedded?.previousepisode || {};
   const next = show.nextepisode = show._embedded?.nextepisode || {};

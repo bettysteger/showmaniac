@@ -9,7 +9,8 @@ Tizen web app, plain HTML/CSS/JS without a build step, so it also runs on older 
 ## Features
 
 * Home with rows of posters: to watch, coming up, watched, popular
-* Show details with all seasons and episodes
+* Show details with all seasons and episodes, specials (e.g. a Halloween episode) in their own tab.
+  Specials are played with their TMDB number (season 0) and do not change the last seen episode
 * Play opens the play link of the next episode in the browser of the TV
 * After watching, the app asks if the episode should be marked as seen
 * Mark episodes as seen, catch up, track and remove shows

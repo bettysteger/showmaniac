@@ -80,7 +80,7 @@
         return tvmaze('/shows/' + id + '?embed[]=previousepisode&embed[]=nextepisode');
       },
       episodes: function (id) {
-        return tvmaze('/shows/' + id + '/episodes');
+        return tvmaze('/shows/' + id + '/episodes?specials=1');
       },
       images: function (id) {
         return tvmaze('/shows/' + id + '/images');
@@ -111,6 +111,10 @@
       },
       show: function (tmdbId) {
         return request('https://api.themoviedb.org/3/tv/' + tmdbId + '?api_key=' + SM.settings.tmdbApiKey);
+      },
+      /** Season 0 holds the specials on TMDB */
+      season: function (tmdbId, number) {
+        return request('https://api.themoviedb.org/3/tv/' + tmdbId + '/season/' + number + '?api_key=' + SM.settings.tmdbApiKey);
       }
     },
 

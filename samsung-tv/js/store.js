@@ -10,6 +10,7 @@
   var STORAGE_KEY = 'showmaniac';
   var listeners = [];
   var episodeCache = {};
+  var specialCache = {}; // TMDB season 0 per TMDB ID
   var queue = Promise.resolve(); // remote operations run one after another
 
   var store = SM.store = { shows: [], lastSync: 0 };
@@ -304,36 +305,79 @@
   };
 
   /**
-   * Episodes with a number (no specials), oldest first.
-   * @return {Promise} [{ no: '02x01', season, number, name, airstamp, aired, image, summary, runtime }]
+   * All episodes of a show, loaded once per hour.
+   * @return {Promise} { episodes: [numbered, oldest first], specials: [no number, oldest first] }
    */
-  store.getEpisodes = function (show) {
+  function loadEpisodes(show) {
     var cached = episodeCache[show.id];
     if (cached && Date.now() - cached.time < 60 * 60 * 1000) { return cached.promise; }
 
     var promise = SM.api.tvmaze.episodes(show.id).then(function (list) {
       var now = Date.now();
+      var result = { episodes: [], specials: [] };
 
-      return (list || []).filter(function (episode) {
-        return episode.number;
-      }).map(function (episode) {
-        return {
-          no: SM.episodeNo(episode.season, episode.number),
+      (list || []).forEach(function (episode) {
+        var item = {
+          no: episode.number ? SM.episodeNo(episode.season, episode.number) : null,
           season: episode.season,
           number: episode.number,
           name: episode.name,
+          airdate: episode.airdate,
           airstamp: episode.airstamp,
           aired: SM.isDate(episode.airstamp) && new Date(episode.airstamp).getTime() <= now,
           image: episode.image ? SM.https(episode.image.medium) : null,
           summary: SM.stripHtml(episode.summary),
           runtime: episode.runtime
         };
+        (episode.number ? result.episodes : result.specials).push(item);
       });
+      return result;
     });
 
     episodeCache[show.id] = { time: Date.now(), promise: promise };
     promise.catch(function () { delete episodeCache[show.id]; });
     return promise;
+  }
+
+  /**
+   * Episodes with a number (no specials), oldest first.
+   * @return {Promise} [{ no: '02x01', season, number, name, airdate, airstamp, aired, image, summary, runtime }]
+   */
+  store.getEpisodes = function (show) {
+    return loadEpisodes(show).then(function (result) { return result.episodes; });
+  };
+
+  /**
+   * Specials (episodes without a number), oldest first. Same fields as getEpisodes, no is null.
+   * @return {Promise}
+   */
+  store.getSpecials = function (show) {
+    return loadEpisodes(show).then(function (result) { return result.specials; });
+  };
+
+  /**
+   * Episode number of a special on TMDB, where specials are season 0, e.g. "00x05".
+   * Players use the TMDB numbering. Matched by air date, then by name.
+   * @return {Promise} "00x05", null if TMDB does not know the special
+   */
+  store.specialNo = function (show, special) {
+    if (!show.tmdb || !SM.settings.tmdbApiKey) { return Promise.resolve(null); }
+
+    var key = show.tmdb;
+    if (!specialCache[key]) {
+      specialCache[key] = SM.api.tmdb.season(show.tmdb, 0).then(function (json) {
+        return (json && json.episodes) || [];
+      });
+      specialCache[key].catch(function () { delete specialCache[key]; });
+    }
+
+    return specialCache[key].then(function (list) {
+      var name = (special.name || '').toLowerCase();
+      var byName = function (episode) { return (episode.name || '').toLowerCase() === name; };
+      var byDate = list.filter(function (episode) { return special.airdate && episode.air_date === special.airdate; });
+      var match = byDate.length > 1 ? (byDate.filter(byName)[0] || byDate[0]) : byDate[0] || list.filter(byName)[0];
+      return match ? SM.episodeNo(0, match.episode_number) : null;
+    });
   };
 
   /**

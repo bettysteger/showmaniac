@@ -15,14 +15,17 @@
     }, [icon ? SM.icon(icon) : null, h('span', { text: label })]);
   }
 
+  var SPECIALS = 'specials'; // key of the specials tab
+
   /** @param {Object} params { show } a tracked show or a show from search/popular */
   SM.views.detail = function (params) {
     var id = params.show.id;
     var show = SM.store.get(id) || params.show;
     var episodes = null; // null while loading
+    var specials = []; // episodes without a number, e.g. a Halloween special
     var services = []; // official streaming services with a page for the show
     var failed = false;
-    var season = null;
+    var season = null; // season number or SPECIALS
 
     var head = h('div', { class: 'detail-head' });
     var actions = h('div', { class: 'row-track' });
@@ -146,6 +149,20 @@
         tab._season = number;
         seasons.appendChild(tab);
       });
+
+      if (specials.length) {
+        var tab = h('div', {
+          class: 'tab focusable' + (season === SPECIALS ? ' active nav-default' : ''),
+          'data-key': 'season:' + SPECIALS,
+          text: 'Specials',
+          onclick: function () {
+            var target = list.querySelector('.focusable');
+            if (target) { SM.nav.focus(target); }
+          }
+        });
+        tab._season = SPECIALS;
+        seasons.appendChild(tab);
+      }
     }
 
     function seenUntil(numbers) {
@@ -206,6 +223,8 @@
         return;
       }
 
+      if (season === SPECIALS) { return renderSpecials(); }
+
       var numbers = episodes.map(function (episode) { return episode.no; });
       var seenIndex = seenUntil(numbers);
 
@@ -234,6 +253,67 @@
       });
     }
 
+    /** Newest first: the special that just aired is the one you are looking for */
+    function renderSpecials() {
+      specials.slice().reverse().forEach(function (special, index) {
+        var date = SM.isDate(special.airstamp) ? SM.formatDate(special.airstamp, !special.aired) : 'TBA';
+        var item = h('div', {
+          class: 'episode focusable' + (special.aired ? '' : ' upcoming'),
+          'data-key': 'special:' + index + ':' + (special.airdate || ''),
+          onclick: function () { openSpecial(special); }
+        }, [
+          h('div', { class: 'episode-image' }, [special.image ? h('img', { src: special.image, alt: '' }) : null]),
+          h('div', { class: 'episode-text' }, [
+            h('div', { class: 'episode-title' }, [
+              h('b', { text: 'Special' }),
+              h('span', { text: special.name || '' })
+            ]),
+            h('div', { class: 'episode-date', text: [date, special.runtime && special.runtime + ' min'].filter(Boolean).join('  ·  ') }),
+            h('p', { class: 'summary lines-2', text: special.summary })
+          ])
+        ]);
+
+        list.appendChild(h('div', { class: 'episode-row', 'data-nav-row': true }, [item]));
+      });
+    }
+
+    /** Specials are played with their TMDB number (season 0) and are not part of the seen tracking */
+    function openSpecial(special) {
+      var title = show.name + ' Special: ' + (special.name || '');
+      if (!special.aired) {
+        return SM.ui.toast(SM.isDate(special.airstamp) ? 'Airs on ' + SM.formatDate(special.airstamp, true) : 'Not aired yet');
+      }
+
+      var buttons = [];
+      if (SM.player.canPlay(show)) {
+        buttons.push({
+          label: 'Play',
+          icon: 'play',
+          action: function () {
+            SM.ui.busy(1);
+            SM.store.specialNo(show, special).then(function (episodeNo) {
+              SM.ui.busy(-1);
+              if (!episodeNo) { return SM.ui.toast('There is no play link for this special.'); }
+              SM.player.play(show, episodeNo, { title: title });
+            }, function () {
+              SM.ui.busy(-1);
+              SM.ui.toast('Could not load the special. Please check the network connection.');
+            });
+          }
+        });
+      }
+      services.forEach(function (service) {
+        buttons.push({
+          label: service.name,
+          icon: 'play',
+          action: function () { SM.player.openService(show, null, service); }
+        });
+      });
+      buttons.push({ label: 'Cancel' });
+
+      SM.ui.dialog({ title: title, message: special.summary || '', buttons: buttons });
+    }
+
     function render() {
       renderHead();
       renderActions();
@@ -252,13 +332,14 @@
     }
 
     function loadEpisodes() {
-      SM.store.getEpisodes(show).then(function (result) {
-        episodes = result;
+      Promise.all([SM.store.getEpisodes(show), SM.store.getSpecials(show)]).then(function (results) {
+        episodes = results[0];
+        specials = results[1];
 
         var next = nextNo();
         var all = seasonNumbers();
         season = next ? SM.parseEpisodeNo(next).season : all[all.length - 1];
-        if (all.indexOf(season) === -1) { season = all[all.length - 1]; }
+        if (all.indexOf(season) === -1) { season = all.length ? all[all.length - 1] : SPECIALS; }
       }, function () {
         failed = true;
       }).then(function () {
