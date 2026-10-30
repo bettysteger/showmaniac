@@ -285,7 +285,7 @@
     var pageVideo = null;     // video of the page, kept until AVPlay plays its stream
     var screen = null;        // <object> of AVPlay after the switch
     var mode = 'video';
-    var position = { x: WIDTH / 2, y: HEIGHT / 2 };
+    var cursorAt = { x: WIDTH / 2, y: HEIGHT / 2 };
     var openedAt = Date.now();
     var started = false;      // the video has played at least once
     var played = false;       // any video played since the player was opened
@@ -737,10 +737,10 @@
       speed = now - lastMove < 200 ? Math.min(speed + 8, 90) : 24; // faster while the key is held
       lastMove = now;
 
-      position.x = Math.max(0, Math.min(WIDTH - 1, position.x + dx * speed));
-      position.y = Math.max(0, Math.min(HEIGHT - 1, position.y + dy * speed));
-      cursor.style.transform = 'translate3d(' + position.x + 'px, ' + position.y + 'px, 0)';
-      hoverAt(position.x, position.y);
+      cursorAt.x = Math.max(0, Math.min(WIDTH - 1, cursorAt.x + dx * speed));
+      cursorAt.y = Math.max(0, Math.min(HEIGHT - 1, cursorAt.y + dy * speed));
+      cursor.style.transform = 'translate3d(' + cursorAt.x + 'px, ' + cursorAt.y + 'px, 0)';
+      hoverAt(cursorAt.x, cursorAt.y);
     }
 
     function close() {
@@ -826,7 +826,7 @@
           case KEY.UP: moveCursor(0, -1); return true;
           case KEY.DOWN: moveCursor(0, 1); return true;
           case KEY.ENTER:
-            clickAt(position.x, position.y);
+            clickAt(cursorAt.x, cursorAt.y);
             setTimeout(check, 500);
             return true;
           case KEY.BACK:
